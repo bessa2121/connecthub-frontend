@@ -1,0 +1,15 @@
+{
+  "name": "connecthub-api",
+  "version": "1.0.0",
+  "description": "ConnectHub API — serviço de projetos, comunidade e autenticação da ETEC Camargo Aranha",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "dev": "node --watch src/main.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": { "pg": "^8.13.1" },
+  "license": "MIT"
+}
