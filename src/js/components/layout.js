@@ -2,6 +2,7 @@ import { html } from '../lib/html.js';
 import { session } from '../services/session.js';
 import { navigate } from '../router.js';
 import { toast, avatar } from './ui.js';
+import { initMotion } from '../lib/motion.js';
 
 const LINKS = [['/', 'Início'], ['/projetos', 'Projetos'], ['/comunidade', 'Comunidade']];
 let open = false;
@@ -27,6 +28,7 @@ export function mountLayout(headerEl, footerEl) {
   session.subscribe(renderHeader);
   window.addEventListener('routechange', () => { open = false; renderHeader(); });
   renderHeader();
+  initMotion(headerEl);
 
   footerEl.innerHTML = html`
     <footer class="site-footer"><div class="wrap">

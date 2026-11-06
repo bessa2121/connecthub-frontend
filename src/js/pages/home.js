@@ -1,6 +1,8 @@
 import { html } from '../lib/html.js';
 import { api } from '../services/api.js';
 import { projectCard } from '../components/ui.js';
+import { mountNetwork } from '../components/network.js';
+import { ICONS } from '../lib/html.js';
 
 const PILLARS = [
   ['👥', 'Comunidade', 'Conheça estudantes de diferentes cursos e descubra pessoas com interesses em comum.'],
@@ -10,39 +12,52 @@ const PILLARS = [
   ['✨', 'Talentos', 'Descubra habilidades, encontre colaboradores e apresente suas competências à comunidade.'],
   ['🌱', 'Oportunidades', 'Encontre pessoas, conhecimentos e possibilidades para desenvolver novas iniciativas.'],
 ];
+const STEPS = [
+  ['Publique', 'Mostre seu projeto em minutos, com resumo, tags e link do material.'],
+  ['Seja descoberto', 'Colegas de todos os cursos encontram sua ideia, curtem e comentam o que viram.'],
+  ['Conecte-se', 'Encontre quem tem a habilidade que falta e comece o próximo projeto junto.'],
+];
+const HEADLINE = 'Grandes ideias começam quando pessoas se conectam.'.split(' ');
+const COURSES = Object.entries(ICONS);
 
 export async function homePage() {
   const featured = (await api.projects({ featured: '1' })).slice(0, 3);
   return {
     view: html`
-    <section class="hero"><div class="wrap">
-      <span class="eyebrow" style="color:#d9d4ff">ETEC Camargo Aranha</span>
-      <h1>Grandes ideias começam quando pessoas se conectam.</h1>
-      <p class="lead">O ConnectHub é uma plataforma de divulgação de projetos e conexão entre alunos da ETEC Camargo Aranha. Descubra ideias criativas, conheça talentos e encontre pessoas para construir o próximo grande projeto.</p>
+    <section class="hero"><canvas aria-hidden="true" data-net></canvas><div class="wrap">
+      <span class="eyebrow">ETEC Camargo Aranha</span>
+      <h1>${HEADLINE.map((w, i) => html`<span class="w" style="--i:${i}">${w}</span> `)}</h1>
+      <p class="lead">O ConnectHub reúne os projetos dos alunos da ETEC Camargo Aranha em um só lugar. Descubra ideias, conheça talentos de outros cursos e encontre pessoas para construir o próximo grande projeto.</p>
       <div class="cta"><a class="btn light" href="/projetos">Explorar projetos</a><a class="btn ghost" href="/comunidade">Conhecer a comunidade</a></div>
       <div class="chips">${featured.map((p) => html`<a class="chip" href="/projetos/${p.slug}"><strong>${p.course}</strong> · ${p.title}</a>`)}</div>
+      <div class="legend" aria-hidden="true"><span><i style="background:#4d78ff"></i>Projetos</span><span><i style="background:#ff4d68"></i>Pessoas</span><span><i style="background:#9a63ff;box-shadow:0 0 8px #9a63ff"></i>Conexões</span></div>
     </div></section>
 
-    <section class="wrap section"><div class="wide center">
-      <span class="eyebrow">Sobre o ConnectHub</span><h2>Muito mais do que uma vitrine de projetos</h2>
-      <p class="muted">Aqui, alunos de Nutrição, Gastronomia, Desenvolvimento de Sistemas, Marketing e Eventos se encontram. Cada projeto publicado é um convite para conversar, colaborar e aprender com quem pensa diferente.</p>
-      <p class="muted">Compartilhe o que você criou, encontre colaboradores e transforme trabalhos acadêmicos em oportunidades reais.</p>
+    <section class="wrap section"><div class="split">
+      <div data-reveal><span class="eyebrow">Sobre o ConnectHub</span><h2>Cada curso faz coisas incríveis. Quase ninguém vê.</h2>
+        <p class="muted">Projetos ficam presos na sala de aula e as pessoas certas nunca se encontram. O ConnectHub dá visibilidade ao que os alunos criam e aproxima quem pode colaborar.</p></div>
+      <div class="tiles" style="margin:0">${COURSES.map(([c, e], i) => html`<a class="tile" style="--h:${222 + i * 32}" href="/projetos?course=${encodeURIComponent(c)}"><span class="e">${e}</span>${c}<small>Ver projetos</small></a>`)}</div>
     </div></section>
 
-    <section class="wrap"><span class="eyebrow">Pilares</span><h2>O que você encontra no ConnectHub</h2>
+    <section class="wrap"><span class="eyebrow">Como funciona</span><h2>Da ideia à parceria em três passos</h2>
+      <div class="steps" data-draw>${STEPS.map(([t, d], i) => html`<div class="step"><b>${i + 1}</b><h3>${t}</h3><p class="muted">${d}</p></div>`)}</div>
+    </section>
+
+    <section class="wrap section"><span class="eyebrow">Pilares</span><h2>O que você encontra no ConnectHub</h2>
       <div class="grid g3">${PILLARS.map(([i, t, d]) => html`<div class="card pillar"><span class="ico">${i}</span><h3>${t}</h3><p class="muted" style="margin:0">${d}</p></div>`)}</div>
     </section>
 
-    <section class="wrap section">
+    <section class="wrap" style="padding-bottom:72px">
       <div class="row" style="justify-content:space-between"><div><span class="eyebrow">Em destaque</span><h2>Projetos que estão chamando atenção</h2></div><a class="btn ghost" href="/projetos">Explorar todos os projetos</a></div>
       <div class="grid g3">${featured.map(projectCard)}</div>
       <p class="meta" style="margin-top:16px">Projetos de demonstração para apresentar a plataforma.</p>
     </section>
 
-    <section class="wrap" style="padding-bottom:40px"><div class="cta-band">
+    <section class="wrap" style="padding-bottom:40px"><div class="cta-band" data-reveal>
       <h2>Sua próxima conexão pode transformar uma ideia em realidade.</h2>
-      <p class="muted">Compartilhe o que você cria, conheça outros talentos e faça parte de uma comunidade que cresce junto.</p>
-      <div class="row"><a class="btn" href="/comunidade">Conhecer a comunidade</a><a class="btn ghost" href="/talentos">Quero fazer parte</a></div>
+      <p>Compartilhe o que você cria, conheça outros talentos e faça parte de uma comunidade que cresce junto.</p>
+      <div class="row"><a class="btn light" href="/cadastro">Criar minha conta</a><a class="btn ghost" href="/talentos">Ver talentos</a></div>
     </div></section>`,
+    mount: (root) => mountNetwork(root.querySelector('[data-net]')),
   };
 }

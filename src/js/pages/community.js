@@ -9,7 +9,7 @@ export async function communityPage({ query }) {
   return {
     title: 'Comunidade',
     view: html`<section class="wrap section" style="padding-top:40px">
-      <span class="eyebrow">Comunidade</span><h1 style="font-size:2.4rem">Conheça quem faz o ConnectHub acontecer</h1>
+      <span class="eyebrow">Comunidade</span><h1>Conheça quem faz o ConnectHub acontecer <span class="count">${list.length}</span></h1>
       <form class="toolbar" data-filters role="search">
         <input name="q" type="search" placeholder="Buscar por nome, curso ou habilidade…" value="${query.q ?? ''}" aria-label="Buscar">
         <select name="course" aria-label="Curso">${options(meta.courses, query.course, 'Todos os cursos')}</select>
@@ -33,8 +33,8 @@ export async function talentsPage({ query }) {
       <span class="eyebrow">Talentos</span><h1 style="font-size:2.4rem">Encontre habilidades para o seu próximo projeto</h1>
       <p class="muted">Filtre por habilidade e convide alguém para colaborar. ${session.user ? '' : html`<a href="/cadastro"><strong>Cadastre-se</strong></a> para aparecer aqui.`}</p>
       <div class="chips" style="margin:20px 0 28px">
-        <a class="chip" style="${!query.skill ? 'background:var(--brand);color:#fff' : ''}" href="/talentos">Todas</a>
-        ${meta.skills.map((s) => html`<a class="chip" style="${query.skill === s ? 'background:var(--brand);color:#fff' : ''}" href="/talentos?skill=${encodeURIComponent(s)}">${s}</a>`)}
+        <a class="chip ${!query.skill ? 'on' : ''}" href="/talentos">Todas</a>
+        ${meta.skills.map((s) => html`<a class="chip ${query.skill === s ? 'on' : ''}" href="/talentos?skill=${encodeURIComponent(s)}">${s}</a>`)}
       </div>
       <div class="grid g3">${list.map(memberCard)}</div>
     </section>`,

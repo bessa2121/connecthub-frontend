@@ -1,4 +1,5 @@
 import { html } from './lib/html.js';
+import { animatePage } from './lib/motion.js';
 
 const routes = [];
 let outlet;
@@ -16,7 +17,7 @@ export function navigate(path, { replace = false } = {}) {
 export async function render() {
   const url = new URL(location.href);
   const found = routes.map((r) => ({ r, m: r.re.exec(url.pathname) })).find((x) => x.m);
-  outlet.innerHTML = '<div class="spinner" role="status" aria-label="Carregando"></div>';
+  outlet.innerHTML = '<div class="loader" role="status" aria-label="Carregando"><i></i><i></i></div>';
   const hint = setTimeout(() => outlet.insertAdjacentHTML('beforeend', '<p class="hint">Acordando o servidor… na primeira visita isso pode levar até 1 minuto.</p>'), 4000);
   let result;
   try {
@@ -31,6 +32,7 @@ export async function render() {
   document.title = result.title ? `${result.title} · ConnectHub` : 'ConnectHub — Projetos e talentos da ETEC Camargo Aranha';
   outlet.innerHTML = result.view.toString();
   result.mount?.(outlet);
+  animatePage(outlet);
   window.scrollTo(0, 0);
   outlet.focus({ preventScroll: true });
   window.dispatchEvent(new Event('routechange'));

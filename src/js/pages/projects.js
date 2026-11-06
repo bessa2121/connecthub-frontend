@@ -10,12 +10,12 @@ export async function projectsPage({ query }) {
   return {
     title: 'Projetos',
     view: html`<section class="wrap section" style="padding-top:40px">
-      <span class="eyebrow">Projetos</span><h1 style="font-size:2.4rem">Explore o que os alunos estão criando</h1>
+      <span class="eyebrow">Projetos</span><h1>Explore o que os alunos estão criando <span class="count">${list.length}</span></h1>
       <form class="toolbar" data-filters role="search">
         <input name="q" type="search" placeholder="Buscar por título, tecnologia ou autor…" value="${query.q ?? ''}" aria-label="Buscar projetos">
         <select name="course" aria-label="Curso">${options(meta.courses, query.course, 'Todos os cursos')}</select>
       </form>
-      <div class="chips" style="margin-bottom:24px">${meta.tags.map((t) => html`<a class="chip" style="${query.tag === t ? 'background:var(--brand);color:#fff' : ''}" href="${url({ tag: query.tag === t ? '' : t })}">${t}</a>`)}</div>
+      <div class="chips" style="margin-bottom:24px">${meta.tags.map((t) => html`<a class="chip ${query.tag === t ? 'on' : ''}" href="${url({ tag: query.tag === t ? '' : t })}">${t}</a>`)}</div>
       ${list.length ? html`<div class="grid g3">${list.map(projectCard)}</div>` : html`<div class="empty"><p>Nenhum projeto encontrado com esses filtros.</p><a class="btn ghost" href="/projetos">Limpar filtros</a></div>`}
     </section>`,
     mount(root) {
@@ -57,6 +57,7 @@ export async function projectDetailPage({ params }) {
         const r = await api.like(p.slug);
         likeBtn.innerHTML = `${r.liked ? '♥' : '♡'} <span>${r.likes}</span>`;
         likeBtn.setAttribute('aria-pressed', String(r.liked));
+        likeBtn.classList.remove('pop'); void likeBtn.offsetWidth; if (r.liked) likeBtn.classList.add('pop');
       };
       root.querySelector('[data-delete]')?.addEventListener('click', async () => {
         if (!confirm('Excluir este projeto definitivamente?')) return;

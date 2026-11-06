@@ -4,10 +4,10 @@ export function toast(message, bad = false) {
   const el = document.createElement('div');
   el.className = `toast${bad ? ' bad' : ''}`; el.textContent = message;
   document.getElementById('toasts').append(el);
-  setTimeout(() => el.remove(), 3500);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 3500);
 }
 
-export const cover = (p, big = false) => html`<div class="cover${big ? ' big' : ''}" style="background:linear-gradient(135deg,hsl(${brandHue(p.hue)} 72% 38%),hsl(${(brandHue(p.hue) + 40) % 360} 78% 52%))" role="img" aria-label="Capa do projeto ${p.title}">${ICONS[p.course] ?? '💡'}${p.featured && !big ? html`<span class="badge">Destaque</span>` : ''}</div>`;
+export const cover = (p, big = false) => html`<div class="cover${big ? ' big' : ''}" style="background:linear-gradient(135deg,hsl(${brandHue(p.hue)} 72% 38%),hsl(${(brandHue(p.hue) + 40) % 360} 78% 52%))" role="img" aria-label="Capa do projeto ${p.title}"><span class="glyph">${ICONS[p.course] ?? '💡'}</span>${p.featured && !big ? html`<span class="badge">Destaque</span>` : ''}</div>`;
 export const avatar = (u, lg = false) => html`<span class="avatar${lg ? ' lg' : ''}" style="background:hsl(${hueOf(u.name)} 60% 46%)" aria-hidden="true">${initials(u.name)}</span>`;
 export const authorsLine = (authors) => html`por ${authors.map((a, i) => html`${i ? ', ' : ''}<a href="/comunidade/${a.slug}"><strong>${a.name}</strong></a>`)}`;
 
@@ -40,7 +40,7 @@ export const options = (list, selected = '', placeholder) => html`${placeholder 
 export function bindForm(form, onSubmit) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn = form.querySelector('[type=submit]'); btn.disabled = true;
+    const btn = form.querySelector('[type=submit]'); btn.disabled = true; btn.classList.add('busy');
     form.querySelectorAll('.err,.alert').forEach((n) => n.remove());
     try { await onSubmit(Object.fromEntries(new FormData(form))); }
     catch (err) {
@@ -50,6 +50,6 @@ export function bindForm(form, onSubmit) {
       }
       const a = document.createElement('div'); a.className = 'alert'; a.setAttribute('role', 'alert'); a.textContent = err.message;
       form.prepend(a);
-    } finally { btn.disabled = false; }
+    } finally { btn.disabled = false; btn.classList.remove('busy'); }
   });
 }
