@@ -31,27 +31,6 @@ export function animatePage(root) {
 }
 
 export function initMotion(headerEl) {
-  // Brilho do cursor nos cards: no máximo uma atualização por quadro.
-  let pending = null;
-  document.addEventListener(
-    'pointermove',
-    (event) => {
-      const wasIdle = !pending;
-      pending = event;
-      if (!wasIdle) return;
-      requestAnimationFrame(() => {
-        const card = pending.target.closest?.('.card, .tile');
-        if (card) {
-          const rect = card.getBoundingClientRect();
-          card.style.setProperty('--mx', `${pending.clientX - rect.left}px`);
-          card.style.setProperty('--my', `${pending.clientY - rect.top}px`);
-        }
-        pending = null;
-      });
-    },
-    { passive: true },
-  );
-
   const onScroll = () => headerEl.classList.toggle('scrolled', scrollY > 8);
   addEventListener('scroll', onScroll, { passive: true });
   onScroll();

@@ -1,7 +1,6 @@
 import { html, ICONS } from '../lib/html.js';
 import { api } from '../services/api.js';
 import { aurora, projectCard } from '../components/ui.js';
-import { mountNetwork } from '../components/network.js';
 
 const PILLARS = [
   ['👥', 'Comunidade', 'Conheça estudantes de diferentes cursos e descubra pessoas com interesses em comum.'],
@@ -47,7 +46,6 @@ export async function homePage() {
   return {
     view: html`
       <section class="hero">
-        <div class="hero-bg">${aurora}<canvas aria-hidden="true" data-net></canvas></div>
         <div class="wrap">
           <span class="eyebrow">ETEC Camargo Aranha</span>
           <h1>${HEADLINE.map((word, i) => html`<span class="w" style="--i:${i}">${word}</span> `)}</h1>
@@ -57,7 +55,7 @@ export async function homePage() {
             projeto.
           </p>
           <div class="cta">
-            <a class="btn light" href="/projetos">Explorar projetos</a>
+            <a class="btn" href="/projetos">Explorar projetos</a>
             <a class="btn ghost" href="/comunidade">Conhecer a comunidade</a>
           </div>
           <div class="chips">
@@ -141,16 +139,11 @@ export async function homePage() {
         </div>
       </section>`,
     mount: (root) => {
-      const hero = root.querySelector('.hero');
+      // Enquanto o hero está na tela, o fundo global (aurora + rede) fica mais intenso.
       new IntersectionObserver(
-        ([entry]) => document.documentElement.classList.toggle('hero-on', entry.intersectionRatio > 0.6),
-        { threshold: [0, 0.6] },
-      ).observe(hero);
-      return mountNetwork(root.querySelector('[data-net]'), {
-        pointerTarget: hero,
-        maxDpr: 1.25,
-        maxPixels: 1_600_000,
-      });
+        ([entry]) => document.documentElement.classList.toggle('hero-on', entry.intersectionRatio > 0.35),
+        { threshold: [0, 0.35] },
+      ).observe(root.querySelector('.hero'));
     },
   };
 }
