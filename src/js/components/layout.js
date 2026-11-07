@@ -4,29 +4,47 @@ import { navigate } from '../router.js';
 import { toast, avatar } from './ui.js';
 import { initMotion } from '../lib/motion.js';
 
-const LINKS = [['/', 'Início'], ['/projetos', 'Projetos'], ['/comunidade', 'Comunidade']];
+const LINKS = [
+  ['/', 'Início'],
+  ['/projetos', 'Projetos'],
+  ['/comunidade', 'Comunidade'],
+];
 let open = false;
 
 export function mountLayout(headerEl, footerEl) {
   const renderHeader = () => {
-    const u = session.user, path = location.pathname;
-    const active = (href) => (href === '/' ? path === '/' : path.startsWith(href)) ? 'active' : '';
+    const u = session.user,
+      path = location.pathname;
+    const active = (href) => ((href === '/' ? path === '/' : path.startsWith(href)) ? 'active' : '');
     headerEl.innerHTML = html`
       <header class="site-header ${open ? 'open' : ''}"><div class="wrap">
         <a class="logo" href="/"><img src="/favicon.svg" alt=""><span class="wordmark">ConnectHub</span></a>
         <button class="btn ghost sm burger" aria-label="Menu" aria-expanded="${String(open)}" data-burger>☰</button>
         <nav class="main" aria-label="Principal">${LINKS.map(([h, t]) => html`<a href="${h}" class="${active(h)}">${t}</a>`)}</nav>
         <div class="actions">
-          ${u ? html`<a href="/comunidade/${u.slug}" class="row" title="Meu perfil">${avatar(u)}</a><button class="btn ghost sm" data-logout>Sair</button>`
-              : html`<a class="btn ghost sm" href="/entrar">Entrar</a>`}
+          ${
+            u
+              ? html`<a href="/comunidade/${u.slug}" class="row" title="Meu perfil">${avatar(u)}</a><button class="btn ghost sm" data-logout>Sair</button>`
+              : html`<a class="btn ghost sm" href="/entrar">Entrar</a>`
+          }
           <a class="btn sm" href="/projetos/publicar">Publicar projeto</a>
         </div>
       </div></header>`;
-    headerEl.querySelector('[data-burger]').onclick = () => { open = !open; renderHeader(); };
-    headerEl.querySelector('[data-logout]')?.addEventListener('click', () => { session.end(); toast('Você saiu da conta.'); navigate('/'); });
+    headerEl.querySelector('[data-burger]').onclick = () => {
+      open = !open;
+      renderHeader();
+    };
+    headerEl.querySelector('[data-logout]')?.addEventListener('click', () => {
+      session.end();
+      toast('Você saiu da conta.');
+      navigate('/');
+    });
   };
   session.subscribe(renderHeader);
-  window.addEventListener('routechange', () => { open = false; renderHeader(); });
+  window.addEventListener('routechange', () => {
+    open = false;
+    renderHeader();
+  });
   renderHeader();
   initMotion(headerEl);
 

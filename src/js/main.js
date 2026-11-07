@@ -1,4 +1,5 @@
 import { route, startRouter } from './router.js';
+import { api } from './services/api.js';
 import { session } from './services/session.js';
 import { mountLayout } from './components/layout.js';
 import { homePage } from './pages/home.js';
@@ -20,6 +21,10 @@ route('/sobre', aboutPage);
 route('/privacidade', privacyPage);
 route('/termos', termsPage);
 
+// Dispara o que a primeira tela vai precisar já agora: acorda a API e enche o cache.
+api.meta().catch(() => {});
+if (location.pathname === '/') api.projects({ featured: '1' }).catch(() => {});
+
 mountLayout(document.getElementById('header'), document.getElementById('footer'));
-await session.restore();
+session.restore(); // em paralelo: não bloqueia a primeira renderização
 startRouter(document.getElementById('app'));

@@ -18,15 +18,22 @@ export async function communityPage({ query }) {
     </section>`,
     mount(root) {
       const f = root.querySelector('[data-filters]');
-      const go = () => { const p = new URLSearchParams({ q: f.q.value.trim(), course: f.course.value }); [...p].forEach(([k, v]) => !v && p.delete(k)); navigate(`/comunidade${p.size ? `?${p}` : ''}`); };
-      f.addEventListener('submit', (e) => { e.preventDefault(); go(); });
+      const go = () => {
+        const p = new URLSearchParams({ q: f.q.value.trim(), course: f.course.value });
+        [...p].forEach(([k, v]) => !v && p.delete(k));
+        navigate(`/comunidade${p.size ? `?${p}` : ''}`);
+      };
+      f.addEventListener('submit', (e) => {
+        e.preventDefault();
+        go();
+      });
       f.course.addEventListener('change', go);
     },
   };
 }
 
 export async function talentsPage({ query }) {
-  const meta = await api.meta(), list = await api.members(query);
+  const [meta, list] = await Promise.all([api.meta(), api.members(query), session.ready]);
   return {
     title: 'Talentos',
     view: html`<section class="wrap section" style="padding-top:40px">
@@ -42,7 +49,9 @@ export async function talentsPage({ query }) {
 }
 
 export async function memberPage({ params }) {
-  const m = await api.member(params.slug), me = session.user, own = me?.id === m.id;
+  const [m] = await Promise.all([api.member(params.slug), session.ready]);
+  const me = session.user,
+    own = me?.id === m.id;
   const meta = own ? await api.meta() : null;
   return {
     title: m.name,
@@ -51,18 +60,27 @@ export async function memberPage({ params }) {
         <div style="flex:1;min-width:240px"><span class="eyebrow">${m.course} · ${m.year}</span><h1 style="font-size:2.2rem;margin-bottom:.2em">${m.name}</h1>
           <p class="muted">${m.bio || 'Este membro ainda não escreveu uma bio.'}</p>
           <div class="chips">${m.skills.map((s) => html`<a class="chip" href="/talentos?skill=${encodeURIComponent(s)}">${s}</a>`)}</div></div></div>
-      ${own ? html`<details style="margin:32px 0"><summary class="btn ghost sm" style="display:inline-flex">Editar perfil</summary>
+      ${
+        own
+          ? html`<details style="margin:32px 0"><summary class="btn ghost sm" style="display:inline-flex">Editar perfil</summary>
         <form class="form wide" data-profile style="margin:16px 0 0" novalidate>
           <label>Bio<textarea name="bio" rows="3" maxlength="300">${m.bio}</textarea></label>
           <label>Habilidades (separadas por vírgula)<input name="skills" value="${m.skills.join(', ')}"></label>
           <div class="grid g2"><label>Curso<select name="course">${options(meta.courses, m.course)}</select></label><label>Ano<select name="year">${options(meta.years, m.year)}</select></label></div>
-          <button class="btn" type="submit">Salvar perfil</button></form></details>` : ''}
+          <button class="btn" type="submit">Salvar perfil</button></form></details>`
+          : ''
+      }
       <h2 style="margin-top:40px">Projetos (${m.projects.length})</h2>
       ${m.projects.length ? html`<div class="grid g3">${m.projects.map(projectCard)}</div>` : html`<div class="empty">Nenhum projeto publicado ainda.</div>`}
     </section>`,
     mount(root) {
       const form = root.querySelector('[data-profile]');
-      if (form) bindForm(form, async (data) => { session.setUser(await api.updateProfile(data)); toast('Perfil atualizado!'); navigate(`/comunidade/${m.slug}`); });
+      if (form)
+        bindForm(form, async (data) => {
+          session.setUser(await api.updateProfile(data));
+          toast('Perfil atualizado!');
+          navigate(`/comunidade/${m.slug}`);
+        });
     },
   };
 }

@@ -39,3 +39,9 @@ Azul `#1f4bd8` + vermelho `#e0243f` que se fundem no roxo `#7a3bd6` — as cores
 Tokens em `:root` de `src/css/styles.css` (`--blue`, `--purple`, `--red`, `--grad`). Suporta tema escuro automático.
 
 Deploy: veja **DEPLOY.md**.
+
+## Performance e formatação
+
+- `npm run build` empacota e minifica JS/CSS com esbuild, gera nomes com hash (cache de 1 ano) e embute `API_URL` no HTML.
+- `npm run format` formata o código-fonte com Prettier (`src/` continua legível; só o `dist/` é minificado).
+- As respostas GET da API ficam em cache na memória e a sessão é verificada em paralelo à primeira tela.

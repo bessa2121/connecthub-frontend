@@ -6,7 +6,11 @@ import { bindForm, cover, projectCard, authorsLine, options, toast } from '../co
 
 export async function projectsPage({ query }) {
   const [list, meta] = await Promise.all([api.projects(query), api.meta()]);
-  const url = (patch) => { const p = new URLSearchParams({ ...query, ...patch }); [...p].forEach(([k, v]) => !v && p.delete(k)); return `/projetos${p.size ? `?${p}` : ''}`; };
+  const url = (patch) => {
+    const p = new URLSearchParams({ ...query, ...patch });
+    [...p].forEach(([k, v]) => !v && p.delete(k));
+    return `/projetos${p.size ? `?${p}` : ''}`;
+  };
   return {
     title: 'Projetos',
     view: html`<section class="wrap section" style="padding-top:40px">
@@ -21,16 +25,23 @@ export async function projectsPage({ query }) {
     mount(root) {
       const form = root.querySelector('[data-filters]');
       const go = () => navigate(url({ q: form.q.value.trim(), course: form.course.value }));
-      form.addEventListener('submit', (e) => { e.preventDefault(); go(); });
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        go();
+      });
       form.course.addEventListener('change', go);
-      if (query.q) { form.q.focus(); form.q.setSelectionRange(99, 99); }
+      if (query.q) {
+        form.q.focus();
+        form.q.setSelectionRange(99, 99);
+      }
     },
   };
 }
 
 export async function projectDetailPage({ params }) {
-  const p = await api.project(params.slug);
-  const me = session.user, mine = me && p.authors.some((a) => a.id === me.id);
+  const [p] = await Promise.all([api.project(params.slug), session.ready]);
+  const me = session.user,
+    mine = me && p.authors.some((a) => a.id === me.id);
   return {
     title: p.title,
     view: html`<article class="wrap section" style="padding-top:32px">
@@ -53,23 +64,32 @@ export async function projectDetailPage({ params }) {
     mount(root) {
       const likeBtn = root.querySelector('[data-like]');
       likeBtn.onclick = async () => {
-        if (!session.user) { toast('Entre para curtir projetos.', true); return navigate(`/entrar?next=${location.pathname}`); }
+        if (!session.user) {
+          toast('Entre para curtir projetos.', true);
+          return navigate(`/entrar?next=${location.pathname}`);
+        }
         const r = await api.like(p.slug);
         likeBtn.innerHTML = `${r.liked ? '♥' : '♡'} <span>${r.likes}</span>`;
         likeBtn.setAttribute('aria-pressed', String(r.liked));
-        likeBtn.classList.remove('pop'); void likeBtn.offsetWidth; if (r.liked) likeBtn.classList.add('pop');
+        likeBtn.classList.remove('pop');
+        void likeBtn.offsetWidth;
+        if (r.liked) likeBtn.classList.add('pop');
       };
       root.querySelector('[data-delete]')?.addEventListener('click', async () => {
         if (!confirm('Excluir este projeto definitivamente?')) return;
-        await api.removeProject(p.slug); toast('Projeto excluído.'); navigate('/projetos');
+        await api.removeProject(p.slug);
+        toast('Projeto excluído.');
+        navigate('/projetos');
       });
     },
   };
 }
 
 export async function publishPage() {
+  await session.ready;
   if (!session.user) throw redirect('/entrar?next=/projetos/publicar');
-  const meta = await api.meta(), u = session.user;
+  const meta = await api.meta(),
+    u = session.user;
   return {
     title: 'Publicar projeto',
     view: html`<section class="wrap section"><div class="wide">
@@ -87,8 +107,11 @@ export async function publishPage() {
         <label>Link do material (opcional)<input name="link" type="url" placeholder="https://"></label>
         <button class="btn" type="submit">Publicar projeto</button>
       </form></div></section>`,
-    mount: (root) => bindForm(root.querySelector('[data-form]'), async (data) => {
-      const p = await api.publish(data); toast('Projeto publicado!'); navigate(`/projetos/${p.slug}`);
-    }),
+    mount: (root) =>
+      bindForm(root.querySelector('[data-form]'), async (data) => {
+        const p = await api.publish(data);
+        toast('Projeto publicado!');
+        navigate(`/projetos/${p.slug}`);
+      }),
   };
 }

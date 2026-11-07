@@ -1,82 +1,215 @@
 // Rede viva: projetos (azul) e pessoas (vermelho) se aproximam; ao conectar, a linha se funde em roxo.
-// O cursor é um nó roxo — "você" — que conecta com quem estiver por perto.
+// O cursor é um nó roxo ("você") que conecta com quem estiver por perto.
+const BLUE = [222, 95, 64];
+const RED = [352, 92, 62];
+const PURPLE = [268, 90, 68];
+const LINK_DISTANCE = 150;
+const POINTER_REACH = 190;
+const TAU = Math.PI * 2;
+
+const hsl = ([h, s, l], alpha = 1) => `hsl(${h} ${s}% ${l}% / ${alpha})`;
+
+// Brilho pré-renderizado: desenhar um sprite é muito mais barato que shadowBlur a cada quadro.
+function glowSprite([h, s, l]) {
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const g = canvas.getContext('2d');
+  const gradient = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, `hsl(${h} ${s}% ${l}% / 1)`);
+  gradient.addColorStop(0.2, `hsl(${h} ${s}% ${l}% / 1)`);
+  gradient.addColorStop(0.24, `hsl(${h} ${s}% ${l}% / .4)`);
+  gradient.addColorStop(1, `hsl(${h} ${s}% ${l}% / 0)`);
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, size, size);
+  return canvas;
+}
+
 export function mountNetwork(canvas, { density = 1 } = {}) {
   if (!canvas) return;
-  const ctx = canvas.getContext('2d'), host = canvas.parentElement;
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const COL = { project: [222, 95, 64], person: [352, 92, 62], mix: [268, 90, 68] };
-  const hsl = ([h, s, l], a = 1) => `hsl(${h} ${s}% ${l}% / ${a})`;
-  const LINK = 150, REACH = 190;
-  let w = 0, h = 0, raf = 0, visible = true, nodes = [], pulses = [], links = new Set();
-  const ptr = { x: -999, y: -999 };
-  const spawn = (i) => ({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - .5) * .45, vy: (Math.random() - .5) * .45, r: 3 + Math.random() * 3, kind: i % 2 ? 'person' : 'project', heat: 0 });
 
-  const resize = () => {
-    const dpr = Math.min(devicePixelRatio || 1, 2), r = canvas.getBoundingClientRect();
-    w = r.width; h = r.height; canvas.width = w * dpr; canvas.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const n = Math.round(Math.min(48, Math.max(14, (w * h) / 21000)) * density);
-    while (nodes.length < n) nodes.push(spawn(nodes.length));
-    nodes.length = n;
-    if (still) draw();
-  };
+  const ctx = canvas.getContext('2d');
+  const host = canvas.parentElement;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sprites = { project: glowSprite(BLUE), person: glowSprite(RED), mix: glowSprite(PURPLE) };
+  const colors = { project: BLUE, person: RED };
 
-  const step = () => {
-    for (const n of nodes) {
-      const dx = ptr.x - n.x, dy = ptr.y - n.y, d = Math.hypot(dx, dy);
-      if (d < REACH && d > 1) { n.vx += (dx / d) * .012; n.vy += (dy / d) * .012; }
-      n.vx *= .995; n.vy *= .995;
-      const sp = Math.hypot(n.vx, n.vy); if (sp > .9) { n.vx *= .9 / sp; n.vy *= .9 / sp; }
-      n.x += n.vx; n.y += n.vy; n.heat *= .94;
-      if (n.x < -10) n.x = w + 10; else if (n.x > w + 10) n.x = -10;
-      if (n.y < -10) n.y = h + 10; else if (n.y > h + 10) n.y = -10;
-    }
-  };
+  let width = 0;
+  let height = 0;
+  let frame = 0;
+  let visible = true;
+  let nodes = [];
+  let pulses = [];
+  let links = new Set();
+  const pointer = { x: -999, y: -999 };
 
-  const line = (ax, ay, bx, by, ca, cb, alpha, width = 1.4) => {
-    const g = ctx.createLinearGradient(ax, ay, bx, by);
-    g.addColorStop(0, hsl(ca, alpha)); g.addColorStop(.5, hsl(COL.mix, alpha)); g.addColorStop(1, hsl(cb, alpha));
-    ctx.strokeStyle = g; ctx.lineWidth = width; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
-  };
+  const spawn = (index) => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    vx: (Math.random() - 0.5) * 0.45,
+    vy: (Math.random() - 0.5) * 0.45,
+    r: 3 + Math.random() * 3,
+    kind: index % 2 ? 'person' : 'project',
+    heat: 0,
+  });
 
-  function draw() {
-    ctx.clearRect(0, 0, w, h);
-    const now = new Set();
-    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
-      const a = nodes[i], b = nodes[j]; if (a.kind === b.kind) continue;
-      const d = Math.hypot(a.x - b.x, a.y - b.y); if (d > LINK) continue;
-      const k = i + '-' + j; now.add(k);
-      if (!links.has(k) && !still) pulses.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, t: 0 });
-      line(a.x, a.y, b.x, b.y, COL[a.kind], COL[b.kind], (1 - d / LINK) * .85);
-      a.heat = b.heat = 1;
-    }
-    links = now;
-    for (const n of nodes) {
-      const d = Math.hypot(ptr.x - n.x, ptr.y - n.y);
-      if (d < REACH) { line(ptr.x, ptr.y, n.x, n.y, COL.mix, COL[n.kind], (1 - d / REACH) * .7, 1.2); n.heat = Math.max(n.heat, 1 - d / REACH); }
-    }
-    for (const p of pulses) { ctx.strokeStyle = hsl(COL.mix, 1 - p.t); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, p.y, 4 + p.t * 26, 0, 6.283); ctx.stroke(); p.t += .03; }
-    pulses = pulses.filter((p) => p.t < 1);
-    for (const n of nodes) {
-      ctx.shadowColor = hsl(n.heat > .15 ? COL.mix : COL[n.kind], .9); ctx.shadowBlur = 10 + n.heat * 14;
-      ctx.fillStyle = hsl(COL[n.kind]); ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 6.283); ctx.fill();
-      ctx.fillStyle = hsl(COL.mix, n.heat); ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 6.283); ctx.fill();
-    }
-    if (ptr.x > -100) { ctx.shadowBlur = 22; ctx.shadowColor = hsl(COL.mix); ctx.fillStyle = hsl(COL.mix); ctx.beginPath(); ctx.arc(ptr.x, ptr.y, 6, 0, 6.283); ctx.fill(); }
-    ctx.shadowBlur = 0;
+  function resize() {
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    const rect = canvas.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const target = Math.round(Math.min(48, Math.max(14, (width * height) / 21000)) * density);
+    while (nodes.length < target) nodes.push(spawn(nodes.length));
+    nodes.length = target;
+    if (reducedMotion) draw();
   }
 
-  const ro = new ResizeObserver(resize), io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; });
-  const move = (e) => { const r = canvas.getBoundingClientRect(); ptr.x = e.clientX - r.left; ptr.y = e.clientY - r.top; };
-  const leave = () => { ptr.x = ptr.y = -999; };
-  const stop = () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); };
-  ro.observe(canvas); io.observe(canvas);
-  if (still) { for (let i = 0; i < 200; i++) step(); draw(); return stop; }
-  host.addEventListener('pointermove', move); host.addEventListener('pointerleave', leave);
-  const tick = () => {
-    if (!canvas.isConnected) return stop(); // a página mudou
-    if (visible && !document.hidden) { step(); draw(); }
-    raf = requestAnimationFrame(tick);
+  function step() {
+    for (const node of nodes) {
+      const dx = pointer.x - node.x;
+      const dy = pointer.y - node.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance < POINTER_REACH && distance > 1) {
+        node.vx += (dx / distance) * 0.012;
+        node.vy += (dy / distance) * 0.012;
+      }
+
+      node.vx *= 0.995;
+      node.vy *= 0.995;
+      const speed = Math.hypot(node.vx, node.vy);
+      if (speed > 0.9) {
+        node.vx *= 0.9 / speed;
+        node.vy *= 0.9 / speed;
+      }
+
+      node.x += node.vx;
+      node.y += node.vy;
+      node.heat *= 0.94;
+
+      if (node.x < -10) node.x = width + 10;
+      else if (node.x > width + 10) node.x = -10;
+      if (node.y < -10) node.y = height + 10;
+      else if (node.y > height + 10) node.y = -10;
+    }
+  }
+
+  function line(ax, ay, bx, by, colorA, colorB, alpha, lineWidth = 1.4) {
+    const gradient = ctx.createLinearGradient(ax, ay, bx, by);
+    gradient.addColorStop(0, hsl(colorA, alpha));
+    gradient.addColorStop(0.5, hsl(PURPLE, alpha)); // a mistura das duas cores é sempre roxo
+    gradient.addColorStop(1, hsl(colorB, alpha));
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(bx, by);
+    ctx.stroke();
+  }
+
+  function sprite(image, x, y, size, alpha = 1) {
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(image, x - size / 2, y - size / 2, size, size);
+    ctx.globalAlpha = 1;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    const current = new Set();
+
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i];
+        const b = nodes[j];
+        if (a.kind === b.kind) continue; // só conecta mundos diferentes
+
+        const distance = Math.hypot(a.x - b.x, a.y - b.y);
+        if (distance > LINK_DISTANCE) continue;
+
+        const key = `${i}-${j}`;
+        current.add(key);
+        if (!links.has(key) && !reducedMotion) pulses.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, t: 0 });
+        line(a.x, a.y, b.x, b.y, colors[a.kind], colors[b.kind], (1 - distance / LINK_DISTANCE) * 0.85);
+        a.heat = b.heat = 1;
+      }
+    }
+    links = current;
+
+    for (const node of nodes) {
+      const distance = Math.hypot(pointer.x - node.x, pointer.y - node.y);
+      if (distance >= POINTER_REACH) continue;
+      line(
+        pointer.x,
+        pointer.y,
+        node.x,
+        node.y,
+        PURPLE,
+        colors[node.kind],
+        (1 - distance / POINTER_REACH) * 0.7,
+        1.2,
+      );
+      node.heat = Math.max(node.heat, 1 - distance / POINTER_REACH);
+    }
+
+    for (const pulse of pulses) {
+      ctx.strokeStyle = hsl(PURPLE, 1 - pulse.t);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(pulse.x, pulse.y, 4 + pulse.t * 26, 0, TAU);
+      ctx.stroke();
+      pulse.t += 0.03;
+    }
+    pulses = pulses.filter((pulse) => pulse.t < 1);
+
+    for (const node of nodes) {
+      const size = node.r * 10;
+      sprite(sprites[node.kind], node.x, node.y, size);
+      if (node.heat > 0.02) sprite(sprites.mix, node.x, node.y, size * 1.15, node.heat);
+    }
+    if (pointer.x > -100) sprite(sprites.mix, pointer.x, pointer.y, 70);
+  }
+
+  const resizeObserver = new ResizeObserver(resize);
+  const visibilityObserver = new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+  });
+
+  const stop = () => {
+    cancelAnimationFrame(frame);
+    resizeObserver.disconnect();
+    visibilityObserver.disconnect();
   };
+
+  resizeObserver.observe(canvas);
+  visibilityObserver.observe(canvas);
+
+  if (reducedMotion) {
+    for (let i = 0; i < 200; i++) step();
+    draw();
+    return stop;
+  }
+
+  host.addEventListener('pointermove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    pointer.x = event.clientX - rect.left;
+    pointer.y = event.clientY - rect.top;
+  });
+  host.addEventListener('pointerleave', () => {
+    pointer.x = pointer.y = -999;
+  });
+
+  function tick() {
+    if (!canvas.isConnected) return stop(); // a página mudou
+    if (visible && !document.hidden) {
+      step();
+      draw();
+    }
+    frame = requestAnimationFrame(tick);
+  }
   tick();
+
   return stop;
 }

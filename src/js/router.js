@@ -5,7 +5,12 @@ const routes = [];
 let outlet;
 export const route = (pattern, page) => {
   const keys = [];
-  const re = new RegExp(`^${pattern.replace(/:(\w+)/g, (_, k) => { keys.push(k); return '([^/]+)'; })}/?$`);
+  const re = new RegExp(
+    `^${pattern.replace(/:(\w+)/g, (_, k) => {
+      keys.push(k);
+      return '([^/]+)';
+    })}/?$`,
+  );
   routes.push({ re, keys, page });
 };
 
@@ -18,18 +23,39 @@ export async function render() {
   const url = new URL(location.href);
   const found = routes.map((r) => ({ r, m: r.re.exec(url.pathname) })).find((x) => x.m);
   outlet.innerHTML = '<div class="loader" role="status" aria-label="Carregando"><i></i><i></i></div>';
-  const hint = setTimeout(() => outlet.insertAdjacentHTML('beforeend', '<p class="hint">Acordando o servidor… na primeira visita isso pode levar até 1 minuto.</p>'), 4000);
+  const hint = setTimeout(
+    () =>
+      outlet.insertAdjacentHTML(
+        'beforeend',
+        '<p class="hint">Acordando o servidor… na primeira visita isso pode levar até 1 minuto.</p>',
+      ),
+    4000,
+  );
   let result;
   try {
-    const params = found ? Object.fromEntries(found.r.keys.map((k, i) => [k, decodeURIComponent(found.m[i + 1])])) : {};
-    result = found ? await found.r.page({ params, query: Object.fromEntries(url.searchParams) })
-      : { title: 'Página não encontrada', view: html`<section class="wrap section center"><h1>404</h1><p class="muted">Não encontramos esta página.</p><a class="btn" href="/">Voltar ao início</a></section>` };
+    const params = found
+      ? Object.fromEntries(found.r.keys.map((k, i) => [k, decodeURIComponent(found.m[i + 1])]))
+      : {};
+    result = found
+      ? await found.r.page({ params, query: Object.fromEntries(url.searchParams) })
+      : {
+          title: 'Página não encontrada',
+          view: html`<section class="wrap section center"><h1>404</h1><p class="muted">Não encontramos esta página.</p><a class="btn" href="/">Voltar ao início</a></section>`,
+        };
   } catch (err) {
-    if (err.redirect) { clearTimeout(hint); return navigate(err.redirect, { replace: true }); }
-    result = { title: 'Erro', view: html`<section class="wrap section center"><h2>${err.status === 404 ? 'Não encontrado' : 'Ops!'}</h2><p class="muted">${err.message}</p><a class="btn" href="/">Voltar ao início</a></section>` };
+    if (err.redirect) {
+      clearTimeout(hint);
+      return navigate(err.redirect, { replace: true });
+    }
+    result = {
+      title: 'Erro',
+      view: html`<section class="wrap section center"><h2>${err.status === 404 ? 'Não encontrado' : 'Ops!'}</h2><p class="muted">${err.message}</p><a class="btn" href="/">Voltar ao início</a></section>`,
+    };
   }
   clearTimeout(hint);
-  document.title = result.title ? `${result.title} · ConnectHub` : 'ConnectHub — Projetos e talentos da ETEC Camargo Aranha';
+  document.title = result.title
+    ? `${result.title} · ConnectHub`
+    : 'ConnectHub — Projetos e talentos da ETEC Camargo Aranha';
   outlet.innerHTML = result.view.toString();
   result.mount?.(outlet);
   animatePage(outlet);
@@ -43,7 +69,17 @@ export function startRouter(el) {
   addEventListener('popstate', render);
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a[href]');
-    if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || a.target || a.origin !== location.origin || a.hasAttribute('download')) return;
+    if (
+      !a ||
+      e.defaultPrevented ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      a.target ||
+      a.origin !== location.origin ||
+      a.hasAttribute('download')
+    )
+      return;
     e.preventDefault();
     navigate(a.pathname + a.search);
   });
