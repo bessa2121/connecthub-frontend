@@ -31,12 +31,20 @@ mountLayout(document.getElementById('header'), document.getElementById('footer')
 session.restore(); // em paralelo: não bloqueia a primeira renderização
 
 // Fundo interativo de TODAS as páginas (o hero e o painel de login têm o seu, mais intenso).
+// A página inicial tem o próprio fundo (hero); o global fica em pausa enquanto o hero cobre a tela.
+const root = document.documentElement;
+addEventListener('routechange', () => root.classList.remove('hero-on'));
 (window.requestIdleCallback ?? setTimeout)(() =>
   mountNetwork(document.querySelector('[data-bg]'), {
     density: 0.6,
     theme: 'auto',
     intensity: 0.6,
     pointerTarget: window,
+    fps: 30,
+    maxDpr: 1,
+    maxPixels: 1_000_000,
+    gradientLines: false,
+    shouldPause: () => root.classList.contains('hero-on'),
   }),
 );
 startRouter(document.getElementById('app'));

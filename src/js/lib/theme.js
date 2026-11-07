@@ -27,9 +27,7 @@ export const theme = {
     } catch {
       /* navegação privada: vale só nesta sessão */
     }
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (document.startViewTransition && !reduced) document.startViewTransition(() => apply(next));
-    else apply(next);
+    apply(next);
   },
 };
 

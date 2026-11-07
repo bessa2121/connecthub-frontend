@@ -47,8 +47,7 @@ export async function homePage() {
   return {
     view: html`
       <section class="hero">
-        ${aurora}
-        <canvas aria-hidden="true" data-net></canvas>
+        <div class="hero-bg">${aurora}<canvas aria-hidden="true" data-net></canvas></div>
         <div class="wrap">
           <span class="eyebrow">ETEC Camargo Aranha</span>
           <h1>${HEADLINE.map((word, i) => html`<span class="w" style="--i:${i}">${word}</span> `)}</h1>
@@ -141,6 +140,17 @@ export async function homePage() {
           </div>
         </div>
       </section>`,
-    mount: (root) => mountNetwork(root.querySelector('[data-net]')),
+    mount: (root) => {
+      const hero = root.querySelector('.hero');
+      new IntersectionObserver(
+        ([entry]) => document.documentElement.classList.toggle('hero-on', entry.intersectionRatio > 0.6),
+        { threshold: [0, 0.6] },
+      ).observe(hero);
+      return mountNetwork(root.querySelector('[data-net]'), {
+        pointerTarget: hero,
+        maxDpr: 1.25,
+        maxPixels: 1_600_000,
+      });
+    },
   };
 }

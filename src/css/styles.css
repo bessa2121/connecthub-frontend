@@ -1,6 +1,7 @@
 :root {
   color-scheme: light;
   --grid: rgb(31 75 216 / 0.06);
+  --card-a: color-mix(in srgb, var(--surface) 95%, var(--purple));
   --bg: #f6f7ff;
   --surface: #fff;
   --ink: #12142b;
@@ -33,6 +34,7 @@
   --shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
   color-scheme: dark;
   --grid: rgb(154 165 255 / 0.07);
+  --card-a: color-mix(in srgb, var(--surface) 88%, var(--purple));
 }
 * {
   box-sizing: border-box;
@@ -93,17 +95,18 @@ p {
   text-align: center;
 }
 /* header */
+
 .site-header {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(14px) saturate(1.4);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
   border-bottom: 1px solid transparent;
   transition:
     border-color 0.3s,
     box-shadow 0.3s;
 }
+
 #header.scrolled .site-header {
   border-color: var(--line);
   box-shadow: 0 6px 24px rgba(40, 50, 140, 0.08);
@@ -268,22 +271,14 @@ nav.main a.active::after {
   animation: s 0.7s linear infinite;
 }
 /* hero */
+
 .hero {
   position: relative;
-  overflow: hidden;
   isolation: isolate;
-  background: var(--deep);
   color: #fff;
-  padding: 104px 0 92px;
+  padding: 104px 0 132px;
 }
-.hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: linear-gradient(90deg, #070a24d9 0%, #070a2499 45%, transparent 80%);
-}
+
 .hero canvas,
 .auth-art canvas {
   position: absolute;
@@ -867,16 +862,13 @@ summary:focus-visible {
 }
 
 /* ---------- cards ---------- */
+
 .card {
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: linear-gradient(
-    165deg,
-    color-mix(in srgb, var(--surface) 90%, var(--purple)),
-    var(--surface) 60%
-  );
+  background: linear-gradient(165deg, var(--card-a), var(--surface) 60%);
   border: 1px solid var(--line);
   border-radius: var(--r);
   box-shadow: var(--shadow);
@@ -884,17 +876,17 @@ summary:focus-visible {
     transform 0.35s var(--ease),
     box-shadow 0.35s;
 }
+
 .card::before {
-  /* borda em gradiente azul → roxo → vermelho no hover */
+  /* borda em gradiente: só existe durante o hover */
   content: '';
+  display: none;
   position: absolute;
   inset: 0;
   z-index: 2;
   border-radius: inherit;
   padding: 1.5px;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s;
   background: var(--grad);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -905,28 +897,37 @@ summary:focus-visible {
     linear-gradient(#000 0 0);
   mask-composite: exclude;
 }
+
 .card::after {
-  /* brilho que segue o cursor */
+  /* brilho que segue o cursor: só existe durante o hover */
   content: '';
+  display: none;
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s;
   background: radial-gradient(
     280px circle at var(--mx, 50%) var(--my, 50%),
     color-mix(in srgb, var(--purple) 18%, transparent),
     transparent 70%
   );
 }
+
 .card:hover {
   transform: translateY(-6px);
   box-shadow: 0 24px 46px -18px color-mix(in srgb, var(--purple) 60%, transparent);
 }
+
 .card:hover::before,
 .card:hover::after {
-  opacity: 1;
+  display: block;
+  animation: fade-in 0.3s;
 }
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 .card .body {
   display: flex;
   flex-direction: column;
@@ -959,24 +960,26 @@ summary:focus-visible {
   background-size: 150% 150% !important;
   transition: background-position 0.9s var(--ease);
 }
+
 .cover::before {
   content: '';
   position: absolute;
   inset: 0;
   background:
     radial-gradient(circle at 85% 0, #ffffff40, transparent 55%),
-    radial-gradient(#ffffff38 1.4px, transparent 1.7px) 0 0 / 20px 20px;
-  -webkit-mask-image: linear-gradient(135deg, #000, transparent 80%);
-  mask-image: linear-gradient(135deg, #000, transparent 80%);
+    radial-gradient(#ffffff26 1.4px, transparent 1.7px) 0 0 / 20px 20px;
 }
+
 .card:hover .cover {
   background-position: 100% 100%;
 }
+
 .cover .glyph {
   position: relative;
-  filter: drop-shadow(0 8px 14px #0006);
+  text-shadow: 0 8px 16px #0006;
   transition: transform 0.5s var(--ease);
 }
+
 .card:hover .cover .glyph {
   transform: translateY(-6px) rotate(-6deg) scale(1.14);
 }
@@ -1205,6 +1208,44 @@ summary:focus-visible {
   .split {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---------- transição suave do hero para a página (sem corte brusco de tom) ---------- */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--deep);
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 170px), transparent);
+  mask-image: linear-gradient(#000 calc(100% - 170px), transparent);
+}
+.hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, #070a24d9 0%, #070a2499 45%, transparent 80%);
+}
+
+/* ---------- desempenho e acabamento ---------- */
+.bg .aurora i {
+  animation: none;
+  will-change: auto;
+} /* fundo global: estático, o movimento vem do canvas */
+.offscreen .aurora i {
+  animation-play-state: paused;
+} /* hero / faixa final fora da tela não animam */
+#app:focus,
+#app:focus-visible {
+  outline: none;
+} /* o foco programático do roteador não desenha moldura */
+:root[data-theme='light'] .card {
+  border-color: color-mix(in srgb, var(--purple) 16%, var(--line));
+}
+:root[data-theme='light'] .bg .aurora {
+  opacity: 0.5;
 }
 
 /* ---------- fundo global interativo (todas as páginas) ---------- */
