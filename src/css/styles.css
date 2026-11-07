@@ -1,4 +1,6 @@
 :root {
+  color-scheme: light;
+  --grid: rgb(31 75 216 / 0.06);
   --bg: #f6f7ff;
   --surface: #fff;
   --ink: #12142b;
@@ -19,18 +21,18 @@
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --font: ui-rounded, 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b0d1f;
-    --surface: #151933;
-    --ink: #eff0fc;
-    --muted: #a2a6cc;
-    --line: #272b52;
-    --brand: #9aa5ff;
-    --brand-d: #b3bbff;
-    --brand-l: #1d2248;
-    --shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
-  }
+:root[data-theme='dark'] {
+  --bg: #0b0d1f;
+  --surface: #151933;
+  --ink: #eff0fc;
+  --muted: #a2a6cc;
+  --line: #272b52;
+  --brand: #9aa5ff;
+  --brand-d: #b3bbff;
+  --brand-l: #1d2248;
+  --shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+  --grid: rgb(154 165 255 / 0.07);
 }
 * {
   box-sizing: border-box;
@@ -399,10 +401,10 @@ button.chip.on {
   gap: 22px;
 }
 .g3 {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
 }
 .g2 {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
 }
 .meta {
   font-size: 0.85rem;
@@ -714,7 +716,7 @@ summary:focus-visible {
 /* footer & toasts */
 .site-footer {
   position: relative;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
   padding: 52px 0 28px;
   margin-top: 40px;
 }
@@ -1205,6 +1207,117 @@ summary:focus-visible {
   }
 }
 
+/* ---------- fundo global interativo (todas as páginas) ---------- */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.bg::before {
+  /* grade tecnológica que some em direção ao rodapé */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000, transparent 78%);
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000, transparent 78%);
+}
+.bg .aurora {
+  z-index: 0;
+  opacity: 0.5;
+}
+:root[data-theme='light'] .bg .aurora {
+  opacity: 0.38;
+}
+.bg canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ---------- alternador de tema ---------- */
+.theme-toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background 0.25s,
+    border-color 0.25s,
+    transform 0.4s var(--ease);
+}
+.theme-toggle:hover {
+  background: var(--brand-l);
+  border-color: color-mix(in srgb, var(--purple) 50%, var(--line));
+  transform: rotate(18deg);
+}
+.theme-toggle svg {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  transition:
+    transform 0.5s var(--ease),
+    opacity 0.3s;
+}
+.theme-toggle .sun {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.4);
+}
+.theme-toggle .moon {
+  opacity: 1;
+}
+:root[data-theme='dark'] .theme-toggle .sun {
+  opacity: 1;
+  transform: none;
+}
+:root[data-theme='dark'] .theme-toggle .moon {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.4);
+}
+
+/* ---------- robustez com zoom / telas estreitas ---------- */
+html,
+body {
+  overflow-x: clip;
+}
+body {
+  overflow-wrap: break-word;
+}
+.form > *,
+label,
+.grid > * {
+  min-width: 0;
+} /* evita que campos estourem o cartão do formulário */
+input,
+select,
+textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+textarea {
+  resize: vertical;
+  min-height: 96px;
+  max-height: 60vh;
+}
+details > .form {
+  max-width: 100%;
+}
+
 /* movimento */
 @keyframes s {
   to {
@@ -1363,5 +1476,39 @@ summary:focus-visible {
   }
   .cover.big {
     aspect-ratio: 16/9;
+  }
+}
+
+@media (max-width: 820px) {
+  .theme-toggle {
+    order: 1;
+    margin-left: auto;
+  }
+  .btn.burger {
+    order: 2;
+    margin-left: 0;
+  }
+  nav.main {
+    order: 3;
+  }
+  .actions {
+    order: 4;
+  }
+}
+@media (max-width: 520px) {
+  .wrap {
+    padding: 0 16px;
+  }
+  .foot {
+    grid-template-columns: 1fr;
+  }
+  .form {
+    padding: 20px;
+  }
+  .cta-band {
+    padding: 48px 18px;
+  }
+  .hero .cta .btn {
+    flex: 1 1 100%;
   }
 }

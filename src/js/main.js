@@ -1,6 +1,8 @@
 import { route, startRouter } from './router.js';
 import { api } from './services/api.js';
 import { session } from './services/session.js';
+import './lib/theme.js';
+import { mountNetwork } from './components/network.js';
 import { mountLayout } from './components/layout.js';
 import { homePage } from './pages/home.js';
 import { projectsPage, projectDetailPage, publishPage } from './pages/projects.js';
@@ -27,4 +29,14 @@ if (location.pathname === '/') api.projects({ featured: '1' }).catch(() => {});
 
 mountLayout(document.getElementById('header'), document.getElementById('footer'));
 session.restore(); // em paralelo: não bloqueia a primeira renderização
+
+// Fundo interativo de TODAS as páginas (o hero e o painel de login têm o seu, mais intenso).
+(window.requestIdleCallback ?? setTimeout)(() =>
+  mountNetwork(document.querySelector('[data-bg]'), {
+    density: 0.6,
+    theme: 'auto',
+    intensity: 0.6,
+    pointerTarget: window,
+  }),
+);
 startRouter(document.getElementById('app'));

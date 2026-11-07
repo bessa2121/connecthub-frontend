@@ -1,8 +1,15 @@
 // Rede viva: projetos (azul) e pessoas (vermelho) se aproximam; ao conectar, a linha se funde em roxo.
 // O cursor é um nó roxo ("você") que conecta com quem estiver por perto.
-const BLUE = [222, 95, 64];
-const RED = [352, 92, 62];
-const PURPLE = [268, 90, 68];
+//
+// Opções:
+//   density       multiplica a quantidade de nós
+//   theme         'dark' | 'light' | 'auto' (acompanha o tema do site)
+//   intensity     opacidade geral (0–1); fundos de página usam valores baixos
+//   pointerTarget elemento que escuta o mouse (padrão: pai do canvas; window = página inteira)
+const PALETTES = {
+  dark: { blue: [222, 95, 64], red: [352, 92, 62], purple: [268, 90, 68], line: 0.85 },
+  light: { blue: [222, 88, 50], red: [352, 86, 50], purple: [268, 80, 54], line: 0.7 },
+};
 const LINK_DISTANCE = 150;
 const POINTER_REACH = 190;
 const TAU = Math.PI * 2;
@@ -25,14 +32,22 @@ function glowSprite([h, s, l]) {
   return canvas;
 }
 
-export function mountNetwork(canvas, { density = 1 } = {}) {
+const spriteSet = (palette) => ({
+  project: glowSprite(palette.blue),
+  person: glowSprite(palette.red),
+  mix: glowSprite(palette.purple),
+});
+
+export function mountNetwork(canvas, { density = 1, theme = 'dark', intensity = 1, pointerTarget } = {}) {
   if (!canvas) return;
 
   const ctx = canvas.getContext('2d');
-  const host = canvas.parentElement;
+  const host = pointerTarget ?? canvas.parentElement;
+  const leaveTarget = host === window ? document.documentElement : host;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const sprites = { project: glowSprite(BLUE), person: glowSprite(RED), mix: glowSprite(PURPLE) };
-  const colors = { project: BLUE, person: RED };
+  const sprites = { dark: spriteSet(PALETTES.dark), light: spriteSet(PALETTES.light) };
+  const mode = () =>
+    theme === 'auto' ? (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark') : theme;
 
   let width = 0;
   let height = 0;
@@ -97,10 +112,11 @@ export function mountNetwork(canvas, { density = 1 } = {}) {
     }
   }
 
-  function line(ax, ay, bx, by, colorA, colorB, alpha, lineWidth = 1.4) {
+  function line(palette, ax, ay, bx, by, colorA, colorB, strength, lineWidth = 1.4) {
+    const alpha = strength * palette.line * intensity;
     const gradient = ctx.createLinearGradient(ax, ay, bx, by);
     gradient.addColorStop(0, hsl(colorA, alpha));
-    gradient.addColorStop(0.5, hsl(PURPLE, alpha)); // a mistura das duas cores é sempre roxo
+    gradient.addColorStop(0.5, hsl(palette.purple, alpha)); // a mistura das duas cores é sempre roxo
     gradient.addColorStop(1, hsl(colorB, alpha));
     ctx.strokeStyle = gradient;
     ctx.lineWidth = lineWidth;
@@ -111,14 +127,17 @@ export function mountNetwork(canvas, { density = 1 } = {}) {
   }
 
   function sprite(image, x, y, size, alpha = 1) {
-    ctx.globalAlpha = alpha;
+    ctx.globalAlpha = alpha * intensity;
     ctx.drawImage(image, x - size / 2, y - size / 2, size, size);
     ctx.globalAlpha = 1;
   }
 
   function draw() {
-    ctx.clearRect(0, 0, width, height);
+    const palette = PALETTES[mode()];
+    const glow = sprites[mode()];
+    const colors = { project: palette.blue, person: palette.red };
     const current = new Set();
+    ctx.clearRect(0, 0, width, height);
 
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
@@ -132,7 +151,7 @@ export function mountNetwork(canvas, { density = 1 } = {}) {
         const key = `${i}-${j}`;
         current.add(key);
         if (!links.has(key) && !reducedMotion) pulses.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, t: 0 });
-        line(a.x, a.y, b.x, b.y, colors[a.kind], colors[b.kind], (1 - distance / LINK_DISTANCE) * 0.85);
+        line(palette, a.x, a.y, b.x, b.y, colors[a.kind], colors[b.kind], 1 - distance / LINK_DISTANCE);
         a.heat = b.heat = 1;
       }
     }
@@ -142,20 +161,21 @@ export function mountNetwork(canvas, { density = 1 } = {}) {
       const distance = Math.hypot(pointer.x - node.x, pointer.y - node.y);
       if (distance >= POINTER_REACH) continue;
       line(
+        palette,
         pointer.x,
         pointer.y,
         node.x,
         node.y,
-        PURPLE,
+        palette.purple,
         colors[node.kind],
-        (1 - distance / POINTER_REACH) * 0.7,
+        (1 - distance / POINTER_REACH) * 0.8,
         1.2,
       );
       node.heat = Math.max(node.heat, 1 - distance / POINTER_REACH);
     }
 
     for (const pulse of pulses) {
-      ctx.strokeStyle = hsl(PURPLE, 1 - pulse.t);
+      ctx.strokeStyle = hsl(palette.purple, (1 - pulse.t) * intensity);
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(pulse.x, pulse.y, 4 + pulse.t * 26, 0, TAU);
@@ -166,11 +186,21 @@ export function mountNetwork(canvas, { density = 1 } = {}) {
 
     for (const node of nodes) {
       const size = node.r * 10;
-      sprite(sprites[node.kind], node.x, node.y, size);
-      if (node.heat > 0.02) sprite(sprites.mix, node.x, node.y, size * 1.15, node.heat);
+      sprite(glow[node.kind], node.x, node.y, size);
+      if (node.heat > 0.02) sprite(glow.mix, node.x, node.y, size * 1.15, node.heat);
     }
-    if (pointer.x > -100) sprite(sprites.mix, pointer.x, pointer.y, 70);
+    if (pointer.x > -100) sprite(glow.mix, pointer.x, pointer.y, 70);
   }
+
+  const onMove = (event) => {
+    const rect = canvas.getBoundingClientRect();
+    pointer.x = event.clientX - rect.left;
+    pointer.y = event.clientY - rect.top;
+  };
+  const onLeave = () => {
+    pointer.x = pointer.y = -999;
+  };
+  const onTheme = () => reducedMotion && draw();
 
   const resizeObserver = new ResizeObserver(resize);
   const visibilityObserver = new IntersectionObserver(([entry]) => {
@@ -181,10 +211,14 @@ export function mountNetwork(canvas, { density = 1 } = {}) {
     cancelAnimationFrame(frame);
     resizeObserver.disconnect();
     visibilityObserver.disconnect();
+    host.removeEventListener('pointermove', onMove);
+    leaveTarget.removeEventListener('pointerleave', onLeave);
+    window.removeEventListener('themechange', onTheme);
   };
 
   resizeObserver.observe(canvas);
   visibilityObserver.observe(canvas);
+  window.addEventListener('themechange', onTheme);
 
   if (reducedMotion) {
     for (let i = 0; i < 200; i++) step();
@@ -192,14 +226,8 @@ export function mountNetwork(canvas, { density = 1 } = {}) {
     return stop;
   }
 
-  host.addEventListener('pointermove', (event) => {
-    const rect = canvas.getBoundingClientRect();
-    pointer.x = event.clientX - rect.left;
-    pointer.y = event.clientY - rect.top;
-  });
-  host.addEventListener('pointerleave', () => {
-    pointer.x = pointer.y = -999;
-  });
+  host.addEventListener('pointermove', onMove);
+  leaveTarget.addEventListener('pointerleave', onLeave);
 
   function tick() {
     if (!canvas.isConnected) return stop(); // a página mudou
