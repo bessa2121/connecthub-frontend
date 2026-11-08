@@ -1085,13 +1085,6 @@ summary:focus-visible {
   font-weight: 700;
   color: var(--brand);
 }
-.more::after {
-  content: '→';
-  transition: transform 0.3s var(--ease);
-}
-.card:hover .more::after {
-  transform: translateX(5px);
-}
 
 .pillar {
   padding: 28px;
@@ -1340,6 +1333,310 @@ textarea {
 }
 details > .form {
   max-width: 100%;
+}
+
+/* o atributo hidden precisa vencer regras como .btn { display: inline-flex } */
+[hidden] {
+  display: none !important;
+}
+
+/* ---------- ícones SVG ---------- */
+.icon {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  vertical-align: -0.14em;
+}
+.btn .icon {
+  width: 1.1em;
+  height: 1.1em;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.back:hover {
+  color: var(--brand);
+}
+.btn.burger .icon {
+  width: 20px;
+  height: 20px;
+}
+.cover .glyph .icon {
+  width: 1em;
+  height: 1em;
+  stroke-width: 1.5;
+}
+.pillar .ico .icon {
+  width: 28px;
+  height: 28px;
+  color: var(--c, var(--purple));
+}
+.tile .e {
+  color: hsl(var(--h) 80% 56%);
+}
+.tile .e .icon {
+  width: 1em;
+  height: 1em;
+  stroke-width: 1.7;
+}
+.tile:hover .e {
+  color: #fff;
+}
+.likes {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.likes .icon {
+  width: 0.95em;
+  height: 0.95em;
+  fill: currentColor;
+  stroke: none;
+}
+.btn[data-like] .icon {
+  transition:
+    fill 0.2s,
+    transform 0.3s var(--ease);
+}
+.btn[data-like][aria-pressed='true'] .icon {
+  fill: currentColor;
+}
+.more .icon {
+  transition: transform 0.3s var(--ease);
+}
+.card:hover .more .icon {
+  transform: translateX(5px);
+}
+.linkbtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-top: 6px;
+  font: inherit;
+  color: var(--brand);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ---------- fotos: perfil e projeto ---------- */
+img.avatar {
+  object-fit: cover;
+  background: var(--brand-l);
+}
+.cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cover.has-img::before {
+  display: none;
+}
+.cover.has-img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 55%, #0009);
+}
+.cover.has-img .tag,
+.cover.has-img .badge {
+  z-index: 1;
+}
+.cover.big.has-img {
+  aspect-ratio: 16 / 9;
+  max-height: 480px;
+}
+.imgfield {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+}
+.imgfield-preview {
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  width: 168px;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  background: var(--brand-l);
+  color: var(--brand);
+}
+.imgfield.round .imgfield-preview {
+  width: 96px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+.imgfield-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.imgfield-body {
+  flex: 1;
+  min-width: 200px;
+  display: grid;
+  gap: 6px;
+}
+.imgfield-body p {
+  margin: 0;
+}
+.imgfield.busy .imgfield-preview {
+  opacity: 0.45;
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+@keyframes pulse {
+  to {
+    opacity: 0.8;
+  }
+}
+.form-title {
+  margin: 8px 0 0;
+  font-size: 1.05rem;
+}
+.note {
+  margin: -8px 0 0;
+}
+.form label .meta {
+  font-weight: 400;
+}
+
+/* ---------- contatos ---------- */
+.socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.soc {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--surface);
+  transition:
+    transform 0.25s var(--ease),
+    background 0.25s,
+    color 0.25s,
+    border-color 0.25s;
+}
+.soc .icon {
+  width: 18px;
+  height: 18px;
+}
+.soc.wide {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px 0 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.soc:hover {
+  color: #fff;
+  background: var(--grad);
+  border-color: transparent;
+  transform: translateY(-2px);
+}
+
+/* ---------- página do projeto e perfil ---------- */
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 40px;
+  align-items: start;
+}
+.detail aside {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  gap: 12px;
+}
+.aside-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.author {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.author-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.author-main span {
+  display: grid;
+  min-width: 0;
+}
+.author .socials {
+  margin-top: 8px;
+}
+.profile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+.profile-info {
+  flex: 1;
+  min-width: 240px;
+}
+.editor {
+  margin: 32px 0;
+}
+.editor summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+.editor summary::-webkit-details-marker {
+  display: none;
+}
+@media (max-width: 900px) {
+  .detail {
+    grid-template-columns: 1fr;
+  }
+  .detail aside {
+    position: static;
+  }
+}
+
+/* ---------- modo leve: sem fundo animado e sem animações (aparelhos fracos ou escolha do usuário) ---------- */
+html[data-lite] .bg canvas {
+  display: none;
+}
+html[data-lite] *,
+html[data-lite] *::before,
+html[data-lite] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+html[data-lite] .rv {
+  opacity: 1 !important;
+}
+html[data-lite] .card,
+html[data-lite] .pillar {
+  box-shadow: none;
 }
 
 /* movimento */

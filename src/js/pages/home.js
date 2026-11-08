@@ -1,4 +1,5 @@
-import { html, ICONS } from '../lib/html.js';
+import { html } from '../lib/html.js';
+import { COURSE_ICON, courseIcon, icon } from '../lib/icons.js';
 import { api } from '../services/api.js';
 import { aurora, projectCard } from '../components/ui.js';
 
@@ -38,7 +39,16 @@ const STEPS = [
 ];
 
 const HEADLINE = 'Grandes ideias começam quando pessoas se conectam.'.split(' ');
-const COURSES = Object.entries(ICONS);
+const COURSES = Object.keys(COURSE_ICON);
+// Ícone SVG de cada pilar (o emoji de cada um continua só como marca d'água do card).
+const PILLAR_ICON = {
+  Comunidade: 'users',
+  Networking: 'network',
+  Projetos: 'rocket',
+  Reconhecimento: 'trophy',
+  Talentos: 'sparkles',
+  Oportunidades: 'sprout',
+};
 
 export async function homePage() {
   const featured = (await api.projects({ featured: '1' })).slice(0, 3);
@@ -82,9 +92,9 @@ export async function homePage() {
         </div>
         <div class="tiles" data-reveal>
           ${COURSES.map(
-            ([course, emoji], i) => html`
+            (course, i) => html`
             <a class="tile" style="--h:${222 + i * 32}" href="/projetos?course=${encodeURIComponent(course)}">
-              <span class="e">${emoji}</span>
+              <span class="e">${icon(courseIcon(course))}</span>
               <span>${course}<small>Ver projetos</small></span>
             </a>`,
           )}
@@ -107,10 +117,10 @@ export async function homePage() {
         <h2>O que você encontra no ConnectHub</h2>
         <div class="grid g3">
           ${PILLARS.map(
-            ([icon, title, text]) => html`
+            ([emoji, title, text]) => html`
             <div class="card pillar">
-              <span class="mark" aria-hidden="true">${icon}</span>
-              <span class="ico">${icon}</span>
+              <span class="mark" aria-hidden="true">${emoji}</span>
+              <span class="ico">${icon(PILLAR_ICON[title])}</span>
               <h3>${title}</h3>
               <p class="muted">${text}</p>
             </div>`,

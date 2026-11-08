@@ -4,6 +4,8 @@ import { navigate } from '../router.js';
 import { toast, avatar } from './ui.js';
 import { initMotion } from '../lib/motion.js';
 import { theme } from '../lib/theme.js';
+import { lite } from '../lib/perf.js';
+import { icon } from '../lib/icons.js';
 
 const themeButton = html`<button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar entre modo claro e escuro" title="Alternar tema">
   <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
@@ -25,7 +27,7 @@ export function mountLayout(headerEl, footerEl) {
     headerEl.innerHTML = html`
       <header class="site-header ${open ? 'open' : ''}"><div class="wrap">
         <a class="logo" href="/"><img src="/favicon.svg" alt=""><span class="wordmark">ConnectHub</span></a>
-        <button class="btn ghost sm burger" aria-label="Menu" aria-expanded="${String(open)}" data-burger>☰</button>
+        <button class="btn ghost sm burger" aria-label="Menu" aria-expanded="${String(open)}" data-burger>${icon(open ? 'x' : 'menu', 20)}</button>
         <nav class="main" aria-label="Principal">${LINKS.map(([h, t]) => html`<a href="${h}" class="${active(h)}">${t}</a>`)}</nav>
         <div class="actions">
           ${
@@ -66,6 +68,8 @@ export function mountLayout(headerEl, footerEl) {
         <div><h4>Participe</h4><ul><li><a href="/entrar">Entrar</a></li><li><a href="/cadastro">Cadastrar-se</a></li><li><a href="/projetos/publicar">Publicar projeto</a></li><li><a href="/talentos">Talentos</a></li></ul></div>
         <div><h4>Institucional</h4><ul><li><a href="/sobre">Sobre o projeto</a></li><li><a href="/privacidade">Política de Privacidade</a></li><li><a href="/termos">Termos de Uso</a></li></ul></div>
       </div>
-      <div class="copy">© ${new Date().getFullYear()} ConnectHub · ETEC Camargo Aranha<br>Redes sociais serão adicionadas em breve.</div>
+      <div class="copy">© ${new Date().getFullYear()} ConnectHub · ETEC Camargo Aranha<br>Redes sociais serão adicionadas em breve.<br>
+        <button class="linkbtn" type="button" data-lite-toggle>${lite.enabled() ? 'Desativar modo leve' : 'Ativar modo leve (menos animações)'}</button></div>
     </div></footer>`.toString();
+  footerEl.querySelector('[data-lite-toggle]').onclick = lite.toggle;
 }

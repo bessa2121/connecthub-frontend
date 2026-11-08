@@ -73,6 +73,13 @@ export function mountNetwork(canvas, options = {}) {
   let frame = 0;
   let visible = true;
   let stopped = false;
+  let scrolling = false; // o fundo fixo descansa enquanto a página rola
+  let scrollTimer = 0;
+  const onScroll = () => {
+    scrolling = true;
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => (scrolling = false), 140);
+  };
   let interval = 1000 / fps;
   let nodeScale = 1;
   let strength = readIntensity();
@@ -237,6 +244,7 @@ export function mountNetwork(canvas, options = {}) {
     host.removeEventListener('pointermove', onMove);
     leaveTarget.removeEventListener('pointerleave', onLeave);
     window.removeEventListener('scroll', measure);
+    window.removeEventListener('scroll', onScroll);
     window.removeEventListener('themechange', onTheme);
   };
 
@@ -252,7 +260,7 @@ export function mountNetwork(canvas, options = {}) {
 
   host.addEventListener('pointermove', onMove, { passive: true });
   leaveTarget.addEventListener('pointerleave', onLeave);
-  if (!fixed) window.addEventListener('scroll', measure, { passive: true });
+  window.addEventListener('scroll', fixed ? onScroll : measure, { passive: true });
 
   // Qualidade adaptativa: mede o ritmo real dos quadros do navegador.
   let level = 0;
@@ -269,7 +277,8 @@ export function mountNetwork(canvas, options = {}) {
       resize();
       return;
     }
-    // continua lento: congela num quadro estático (o site segue fluido)
+    // continua lento: congela num quadro estático e liga o modo leve (o site segue fluido)
+    document.documentElement.dataset.lite = 'auto';
     stop();
     for (let i = 0; i < 60; i++) step(1);
     draw();
@@ -281,7 +290,7 @@ export function mountNetwork(canvas, options = {}) {
 
     const delta = now - lastRaf;
     lastRaf = now;
-    if (!visible || document.hidden) {
+    if (!visible || document.hidden || scrolling) {
       lastDraw = now;
       return;
     }

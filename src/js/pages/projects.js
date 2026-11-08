@@ -1,8 +1,19 @@
 import { html, fmtDate } from '../lib/html.js';
+import { icon } from '../lib/icons.js';
 import { api } from '../services/api.js';
 import { session } from '../services/session.js';
 import { navigate, redirect } from '../router.js';
-import { bindForm, cover, projectCard, authorsLine, options, toast } from '../components/ui.js';
+import {
+  avatar,
+  bindForm,
+  bindImageFields,
+  contactLinks,
+  cover,
+  imageField,
+  options,
+  projectCard,
+  toast,
+} from '../components/ui.js';
 
 export async function projectsPage({ query }) {
   const [list, meta] = await Promise.all([api.projects(query), api.meta()]);
@@ -24,41 +35,64 @@ export async function projectsPage({ query }) {
     </section>`,
     mount(root) {
       const form = root.querySelector('[data-filters]');
-      const go = () => navigate(url({ q: form.q.value.trim(), course: form.course.value }));
+      const go = () => navigate(url({ q: form.elements.q.value.trim(), course: form.elements.course.value }));
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         go();
       });
-      form.course.addEventListener('change', go);
+      form.elements.course.addEventListener('change', go);
       if (query.q) {
-        form.q.focus();
-        form.q.setSelectionRange(99, 99);
+        form.elements.q.focus();
+        form.elements.q.setSelectionRange(99, 99);
       }
     },
   };
 }
 
+const safeUrl = (url) => (/^https?:\/\//i.test(url ?? '') ? url : '');
+
+const authorCard = (author) => html`
+  <div class="author">
+    <a class="author-main" href="/comunidade/${author.slug}">
+      ${avatar(author)}
+      <span><strong>${author.name}</strong><small class="meta">${author.course} · ${author.year}</small></span>
+    </a>
+    ${contactLinks(author)}
+  </div>`;
+
 export async function projectDetailPage({ params }) {
   const [p] = await Promise.all([api.project(params.slug), session.ready]);
-  const me = session.user,
-    mine = me && p.authors.some((a) => a.id === me.id);
+  const me = session.user;
+  const mine = me && p.authors.some((a) => a.id === me.id);
+  const link = safeUrl(p.link);
+
   return {
     title: p.title,
     view: html`<article class="wrap section" style="padding-top:32px">
-      <a class="muted" href="/projetos">← Todos os projetos</a>
+      <a class="back muted" href="/projetos">${icon('arrow-left')} Todos os projetos</a>
       <div style="margin:16px 0 28px">${cover(p, true)}</div>
-      <div class="wide" style="margin:0">
-        <span class="eyebrow">${p.course} · ${p.year}</span>
-        <h1>${p.title}</h1>${p.subtitle ? html`<p class="lead muted" style="font-size:1.2rem">${p.subtitle}</p>` : ''}
-        <p class="meta">${authorsLine(p.authors)} · ${fmtDate(p.createdAt)}</p>
-        <div class="chips" style="margin:16px 0">${p.tags.map((t) => html`<a class="chip" href="/projetos?tag=${encodeURIComponent(t)}">${t}</a>`)}</div>
-        <p><strong>${p.summary}</strong></p>
-        ${p.description ? html`<p class="prose muted">${p.description}</p>` : ''}
-        <div class="row" style="margin-top:24px">
-          <button class="btn ghost" data-like aria-pressed="${String(p.liked)}">${p.liked ? '♥' : '♡'} <span>${p.likes}</span></button>
-          ${p.link ? html`<a class="btn" href="${p.link}" target="_blank" rel="noopener noreferrer">Ver material do projeto ↗</a>` : ''}
-          ${mine ? html`<button class="btn danger sm" data-delete>Excluir</button>` : ''}
+      <div class="detail">
+        <div>
+          <span class="eyebrow">${p.course} · ${p.year}</span>
+          <h1>${p.title}</h1>
+          ${p.subtitle ? html`<p class="lead muted" style="font-size:1.2rem">${p.subtitle}</p>` : ''}
+          <p class="meta">Publicado em ${fmtDate(p.createdAt)}</p>
+          <div class="chips" style="margin:16px 0">
+            ${p.tags.map((t) => html`<a class="chip" href="/projetos?tag=${encodeURIComponent(t)}">${t}</a>`)}
+          </div>
+          <p><strong>${p.summary}</strong></p>
+          ${p.description ? html`<p class="prose muted">${p.description}</p>` : ''}
+          <div class="row" style="margin-top:24px">
+            <button class="btn ghost" data-like aria-pressed="${String(p.liked)}">${icon('heart')} <span>${p.likes}</span></button>
+            ${link ? html`<a class="btn" href="${link}" target="_blank" rel="noopener noreferrer">${icon('external')} Abrir projeto</a>` : ''}
+            ${mine ? html`<a class="btn ghost" href="/projetos/${p.slug}/editar">${icon('pencil')} Editar</a>` : ''}
+            ${mine ? html`<button class="btn danger sm" data-delete>${icon('trash')} Excluir</button>` : ''}
+          </div>
         </div>
+        <aside>
+          <h2 class="aside-title">${p.authors.length > 1 ? 'Autores' : 'Autor(a)'}</h2>
+          ${p.authors.map(authorCard)}
+        </aside>
       </div>
     </article>`,
     mount(root) {
@@ -69,7 +103,7 @@ export async function projectDetailPage({ params }) {
           return navigate(`/entrar?next=${location.pathname}`);
         }
         const r = await api.like(p.slug);
-        likeBtn.innerHTML = `${r.liked ? '♥' : '♡'} <span>${r.likes}</span>`;
+        likeBtn.querySelector('span').textContent = r.likes;
         likeBtn.setAttribute('aria-pressed', String(r.liked));
         likeBtn.classList.remove('pop');
         void likeBtn.offsetWidth;
@@ -85,33 +119,87 @@ export async function projectDetailPage({ params }) {
   };
 }
 
+/** Formulário usado para publicar e para editar (mesmos campos; "values" preenche o que já existe). */
+const projectForm = (meta, values, submitLabel) => html`
+  <form class="form" data-form novalidate>
+    ${imageField({
+      name: 'image',
+      label: 'Foto do projeto',
+      hint: 'Aparece no card e na página do projeto (recorte 16:9 automático). JPG, PNG ou WebP.',
+      value: values.image,
+    })}
+    <label>Título<input name="title" required maxlength="80" value="${values.title}" placeholder="Ex.: Agenda ETEC"></label>
+    <label>Subtítulo (opcional)<input name="subtitle" maxlength="120" value="${values.subtitle}"></label>
+    <div class="grid g2">
+      <label>Curso<select name="course">${options(meta.courses, values.course)}</select></label>
+      <label>Ano<select name="year">${options(meta.years, values.year)}</select></label>
+    </div>
+    <label>Resumo<textarea name="summary" rows="3" maxlength="300" required placeholder="Em poucas linhas, o que é o projeto?">${values.summary}</textarea></label>
+    <label>Descrição completa (opcional)<textarea name="description" rows="7" maxlength="4000">${values.description}</textarea></label>
+    <label>Tags (separadas por vírgula)<input name="tags" value="${values.tags}" placeholder="Inovação, React, Design"></label>
+    <label>Link do projeto (opcional)
+      <input name="link" type="url" maxlength="500" value="${values.link}" placeholder="https://">
+      <span class="meta">Site, repositório (GitHub), vídeo ou apresentação.</span>
+    </label>
+    <button class="btn" type="submit">${submitLabel}</button>
+  </form>`;
+
+const emptyValues = (user) => ({
+  image: '',
+  title: '',
+  subtitle: '',
+  summary: '',
+  description: '',
+  tags: '',
+  link: '',
+  course: user.course,
+  year: user.year,
+});
+
 export async function publishPage() {
   await session.ready;
   if (!session.user) throw redirect('/entrar?next=/projetos/publicar');
-  const meta = await api.meta(),
-    u = session.user;
+  const meta = await api.meta();
+
   return {
     title: 'Publicar projeto',
     view: html`<section class="wrap section"><div class="wide">
       <span class="eyebrow">Publicar projeto</span><h1 style="font-size:2.2rem">Mostre o que você criou</h1>
-      <form class="form" data-form novalidate>
-        <label>Título<input name="title" required maxlength="80" placeholder="Ex.: Agenda ETEC"></label>
-        <label>Subtítulo (opcional)<input name="subtitle" maxlength="120"></label>
-        <div class="grid g2">
-          <label>Curso<select name="course">${options(meta.courses, u.course)}</select></label>
-          <label>Ano<select name="year">${options(meta.years, u.year)}</select></label>
-        </div>
-        <label>Resumo<textarea name="summary" rows="3" maxlength="300" required placeholder="Em poucas linhas, o que é o projeto?"></textarea></label>
-        <label>Descrição completa (opcional)<textarea name="description" rows="7" maxlength="4000"></textarea></label>
-        <label>Tags (separadas por vírgula)<input name="tags" placeholder="Inovação, React, Design"></label>
-        <label>Link do material (opcional)<input name="link" type="url" placeholder="https://"></label>
-        <button class="btn" type="submit">Publicar projeto</button>
-      </form></div></section>`,
-    mount: (root) =>
+      ${projectForm(meta, emptyValues(session.user), 'Publicar projeto')}
+    </div></section>`,
+    mount(root) {
+      bindImageFields(root);
       bindForm(root.querySelector('[data-form]'), async (data) => {
-        const p = await api.publish(data);
+        const created = await api.publish(data);
         toast('Projeto publicado!');
+        navigate(`/projetos/${created.slug}`);
+      });
+    },
+  };
+}
+
+export async function editProjectPage({ params }) {
+  const [p, meta] = await Promise.all([api.project(params.slug), api.meta(), session.ready]);
+  if (!session.user) throw redirect(`/entrar?next=/projetos/${params.slug}/editar`);
+  if (!p.authors.some((a) => a.id === session.user.id)) {
+    throw Object.assign(new Error('Apenas os autores podem editar este projeto.'), { status: 403 });
+  }
+
+  return {
+    title: `Editar ${p.title}`,
+    view: html`<section class="wrap section"><div class="wide">
+      <a class="back muted" href="/projetos/${p.slug}">${icon('arrow-left')} Voltar ao projeto</a>
+      <span class="eyebrow" style="display:block;margin-top:16px">Editar projeto</span>
+      <h1 style="font-size:2.2rem">${p.title}</h1>
+      ${projectForm(meta, { ...p, subtitle: p.subtitle ?? '', description: p.description ?? '', tags: p.tags.join(', ') }, 'Salvar alterações')}
+    </div></section>`,
+    mount(root) {
+      bindImageFields(root);
+      bindForm(root.querySelector('[data-form]'), async (data) => {
+        await api.updateProject(p.slug, data);
+        toast('Projeto atualizado!');
         navigate(`/projetos/${p.slug}`);
-      }),
+      });
+    },
   };
 }

@@ -2,10 +2,11 @@ import { route, startRouter } from './router.js';
 import { api } from './services/api.js';
 import { session } from './services/session.js';
 import './lib/theme.js';
+import './lib/perf.js';
 import { mountNetwork } from './components/network.js';
 import { mountLayout } from './components/layout.js';
 import { homePage } from './pages/home.js';
-import { projectsPage, projectDetailPage, publishPage } from './pages/projects.js';
+import { projectsPage, projectDetailPage, publishPage, editProjectPage } from './pages/projects.js';
 import { communityPage, memberPage, talentsPage } from './pages/community.js';
 import { loginPage, registerPage } from './pages/auth.js';
 import { aboutPage, privacyPage, termsPage } from './pages/static.js';
@@ -14,6 +15,7 @@ route('/', homePage);
 route('/projetos', projectsPage);
 route('/projetos/publicar', publishPage); // antes de /projetos/:slug
 route('/projetos/:slug', projectDetailPage);
+route('/projetos/:slug/editar', editProjectPage);
 route('/comunidade', communityPage);
 route('/comunidade/:slug', memberPage);
 route('/talentos', talentsPage);
@@ -34,15 +36,17 @@ session.restore(); // em paralelo: não bloqueia a primeira renderização
 // Um único fundo para o site inteiro; na página inicial (hero visível) ele fica mais intenso.
 const root = document.documentElement;
 addEventListener('routechange', () => root.classList.remove('hero-on'));
-(window.requestIdleCallback ?? setTimeout)(() =>
-  mountNetwork(document.querySelector('[data-bg]'), {
-    density: 0.75,
-    theme: 'auto',
-    pointerTarget: window,
-    fps: 30,
-    maxDpr: 1,
-    maxPixels: 1_000_000,
-    intensity: () => (root.classList.contains('hero-on') ? 1 : 0.6),
-  }),
+(window.requestIdleCallback ?? setTimeout)(
+  () =>
+    !root.dataset.lite &&
+    mountNetwork(document.querySelector('[data-bg]'), {
+      density: 0.75,
+      theme: 'auto',
+      pointerTarget: window,
+      fps: 30,
+      maxDpr: 1,
+      maxPixels: 1_000_000,
+      intensity: () => (root.classList.contains('hero-on') ? 1 : 0.6),
+    }),
 );
 startRouter(document.getElementById('app'));

@@ -1,6 +1,9 @@
 const TOKEN_KEY = 'connecthub.token';
 const BASE = (window.__CONNECTHUB__?.API_URL ?? '').replace(/\/$/, '');
 
+/** Endereço completo de uma imagem guardada na API ("/api/images/<id>"). */
+export const assetUrl = (ref) => (ref && ref.startsWith('/api/') ? `${BASE}${ref}` : ref);
+
 // Cache em memória das respostas GET: evita repetir chamadas ao navegar e
 // reaproveita requisições já em andamento (a API gratuita pode demorar a acordar).
 const TTL = { default: 30_000, meta: 600_000 };
@@ -79,6 +82,8 @@ export const api = {
   projects: (filters = {}) => get(`/projects${query(filters)}`),
   project: (slug) => get(`/projects/${slug}`),
   publish: (body) => send('POST', '/projects', body),
+  updateProject: (slug, body) => send('PUT', `/projects/${slug}`, body),
+  uploadImage: (data) => send('POST', '/images', { data }),
   removeProject: (slug) => send('DELETE', `/projects/${slug}`),
   like: (slug) => send('POST', `/projects/${slug}/like`),
 

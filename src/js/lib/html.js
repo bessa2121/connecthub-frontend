@@ -16,6 +16,8 @@ const render = (v) =>
   v instanceof Raw ? v.s : Array.isArray(v) ? v.map(render).join('') : v == null || v === false ? '' : esc(v);
 export const html = (strings, ...values) =>
   new Raw(strings.reduce((out, s, i) => out + s + (i < values.length ? render(values[i]) : ''), ''));
+/** Marca um trecho já seguro (ex.: SVG da biblioteca de ícones) para não ser escapado. */
+export const raw = (s) => new Raw(s);
 export const fmtDate = (iso) =>
   new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso));
 export const initials = (name) =>
@@ -29,10 +31,3 @@ export const initials = (name) =>
 // Mantém todas as cores geradas na faixa azul (220°) → roxo (280°) → vermelho (350°)
 export const brandHue = (n) => 220 + (Math.abs(n) % 130);
 export const hueOf = (text) => brandHue([...text].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7));
-export const ICONS = {
-  'Desenvolvimento de Sistemas': '💻',
-  Marketing: '📣',
-  Eventos: '🎭',
-  Nutrição: '🥗',
-  Gastronomia: '🍳',
-};

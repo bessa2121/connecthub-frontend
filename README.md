@@ -45,3 +45,13 @@ Deploy: veja **DEPLOY.md**.
 - `npm run build` empacota e minifica JS/CSS com esbuild, gera nomes com hash (cache de 1 ano) e embute `API_URL` no HTML.
 - `npm run format` formata o código-fonte com Prettier (`src/` continua legível; só o `dist/` é minificado).
 - As respostas GET da API ficam em cache na memória e a sessão é verificada em paralelo à primeira tela.
+
+## Fotos, contatos e edição
+
+- **Editar projeto**: autores veem "Editar" na página do projeto (`/projetos/:slug/editar`); o endereço do projeto não muda.
+- **Foto de perfil e foto do projeto**: escolhidas nos formulários. O navegador recorta e reduz a imagem (`src/js/lib/image.js`) e envia
+  para a API (`POST /api/images`); o formulário só guarda a referência. Mantenha a API na versão 1.1+.
+- **Contatos**: Instagram, LinkedIn e e-mail de contato (opcionais e públicos) aparecem no perfil e nos autores de cada projeto.
+- **Ícones**: SVG em `src/js/lib/icons.js` (os emojis ficam só como marca d'água dos cards de pilares).
+- **Modo leve**: sem fundo animado nem animações. Liga sozinho em aparelhos fracos/economia de dados, quando o fundo percebe que a tela
+  não aguenta, ou pelo link no rodapé.

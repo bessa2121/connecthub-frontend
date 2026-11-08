@@ -21,6 +21,10 @@ export const aboutPage = doc(
 export const privacyPage = doc(
   'Política de Privacidade',
   [
+    'Fotos e contatos',
+    'Foto de perfil, foto do projeto, Instagram, LinkedIn e e-mail de contato são opcionais e ficam visíveis para qualquer visitante, no seu perfil e nos seus projetos. O e-mail usado para entrar na conta nunca é exibido. Você pode alterar ou remover essas informações a qualquer momento em “Editar perfil” e “Editar projeto”. Alunos menores de idade devem divulgar contatos apenas com ciência dos responsáveis.',
+  ],
+  [
     'Dados coletados',
     'Coletamos nome, e-mail, curso, ano e as informações de perfil e projetos que você decidir publicar. O e-mail não é exibido publicamente.',
   ],
