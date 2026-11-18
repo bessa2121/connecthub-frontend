@@ -1834,3 +1834,187 @@ html[data-lite] .pillar {
     flex: 1 1 100%;
   }
 }
+
+/* ---- acesso e administração (reusa os tokens da plataforma; funciona nos temas claro e escuro) ---- */
+[hidden] {
+  display: none !important;
+}
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+:root {
+  --ok: #15803d;
+  --warn: #b45309;
+}
+:root[data-theme='dark'] {
+  --ok: #5fd08a;
+  --warn: #f2b45a;
+}
+.admin .chips {
+  margin: 18px 0 8px;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin: 18px 0 4px;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 2px;
+}
+.stat strong {
+  font-size: 1.9rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.stat span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.stat.warn {
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
+}
+.stat.warn strong {
+  color: var(--warn);
+}
+.stat.ok strong {
+  color: var(--ok);
+}
+.table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.table th,
+.table td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.table th {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.table tbody tr:hover {
+  background: var(--brand-l);
+}
+.table .acts {
+  white-space: nowrap;
+  text-align: right;
+}
+.table .acts .btn {
+  margin-left: 6px;
+}
+.status {
+  --st: var(--muted);
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--st);
+  background: color-mix(in srgb, var(--st) 14%, var(--surface));
+}
+.status[data-status='PENDING'] {
+  --st: var(--warn);
+}
+.status[data-status='APPROVED'],
+.status[data-status='ACTIVE'] {
+  --st: var(--brand);
+}
+.status[data-status='USED'] {
+  --st: var(--ok);
+}
+.status[data-status='REJECTED'],
+.status[data-status='SUSPENDED'] {
+  --st: var(--danger);
+}
+.pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.admin-dialog {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 24px;
+  max-width: min(480px, 92vw);
+  box-shadow: var(--shadow);
+}
+.admin-dialog::backdrop {
+  background: rgb(7 10 36 / 0.5);
+}
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  margin: 0 0 18px;
+}
+.facts dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 720px) {
+  .table thead {
+    display: none;
+  }
+  .table tr {
+    display: block;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    border: 0;
+    padding: 5px 14px;
+    text-align: right;
+  }
+  .table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-align: left;
+  }
+  .table .acts {
+    justify-content: flex-end;
+    white-space: normal;
+  }
+}

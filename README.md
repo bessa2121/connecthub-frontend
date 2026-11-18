@@ -55,3 +55,10 @@ Deploy: veja **DEPLOY.md**.
 - **Ícones**: SVG em `src/js/lib/icons.js` (os emojis ficam só como marca d'água dos cards de pilares).
 - **Modo leve**: sem fundo animado nem animações. Liga sozinho em aparelhos fracos/economia de dados, quando o fundo percebe que a tela
   não aguenta, ou pelo link no rodapé.
+
+
+## Acesso e administração
+- `/solicitar-acesso`: formulário público de interesse (não cria conta).
+- `/cadastro`: cadastro em duas etapas (dados → código recebido por e-mail). Só funciona para e-mails aprovados; a decisão é do backend.
+- `/admin`, `/admin/autorizacoes`, `/admin/usuarios`: painel restrito a usuários ADMIN (o backend valida cada chamada; o front só esconde as telas).
+- Ao adicionar rotas novas, inclua-as também em `vercel.json` (rewrite de SPA).

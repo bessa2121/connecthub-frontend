@@ -76,7 +76,11 @@ const query = (filters) => {
 export const api = {
   meta: () => get('/meta', TTL.meta),
   me: () => request('GET', '/auth/me'),
+  // Cadastro em duas etapas: sem `verificationToken` dispara o código (202); com ele cria a conta (201).
   register: (body) => request('POST', '/auth/register', body),
+  verifyEmail: (body) => request('POST', '/auth/verify-email', body),
+  resendVerification: (body) => request('POST', '/auth/resend-verification', body),
+  requestAccess: (body) => request('POST', '/access-requests', body),
   login: (body) => request('POST', '/auth/login', body),
 
   projects: (filters = {}) => get(`/projects${query(filters)}`),
@@ -90,4 +94,18 @@ export const api = {
   members: (filters = {}) => get(`/members${query(filters)}`),
   member: (slug) => get(`/members/${slug}`),
   updateProfile: (body) => send('PUT', '/profile', body),
+
+  // Administração: sem cache (as listas mudam a cada decisão). A autorização real é do backend.
+  admin: {
+    summary: () => request('GET', '/admin/summary'),
+    requests: (filters = {}) => request('GET', `/admin/access-requests${query(filters)}`),
+    request: (id) => request('GET', `/admin/access-requests/${id}`),
+    approve: (id) => request('PATCH', `/admin/access-requests/${id}/approve`),
+    reject: (id) => request('PATCH', `/admin/access-requests/${id}/reject`),
+    authorizations: (filters = {}) => request('GET', `/admin/authorizations${query(filters)}`),
+    revoke: (id) => request('PATCH', `/admin/authorizations/${id}/revoke`),
+    users: (filters = {}) => request('GET', `/admin/users${query(filters)}`),
+    suspend: (id) => request('PATCH', `/admin/users/${id}/suspend`),
+    reactivate: (id) => request('PATCH', `/admin/users/${id}/reactivate`),
+  },
 };

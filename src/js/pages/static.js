@@ -21,6 +21,10 @@ export const aboutPage = doc(
 export const privacyPage = doc(
   'Política de Privacidade',
   [
+    'Solicitação de acesso e confirmação de e-mail',
+    'Para criar uma conta é preciso pedir acesso informando nome completo, e-mail e instituição. A finalidade é exclusivamente verificar se você é aluno da ETEC e confirmar que o e-mail é seu (enviamos um código de 6 dígitos, guardado apenas em forma de hash e válido por 10 minutos). Esses dados só são vistos pelos administradores da plataforma, indicados pela coordenação do projeto, que é a responsável pelo tratamento. Solicitações rejeitadas ou revogadas são apagadas automaticamente após 90 dias; os dados de quem cria conta passam a seguir as regras de conta abaixo. O código da escola (012) apenas identifica a instituição e não funciona como senha.',
+  ],
+  [
     'Fotos e contatos',
     'Foto de perfil, foto do projeto, Instagram, LinkedIn e e-mail de contato são opcionais e ficam visíveis para qualquer visitante, no seu perfil e nos seus projetos. O e-mail usado para entrar na conta nunca é exibido. Você pode alterar ou remover essas informações a qualquer momento em “Editar perfil” e “Editar projeto”. Alunos menores de idade devem divulgar contatos apenas com ciência dos responsáveis.',
   ],

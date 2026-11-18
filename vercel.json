@@ -47,6 +47,22 @@
     {
       "source": "/termos",
       "destination": "/index.html"
+    },
+    {
+      "source": "/solicitar-acesso",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/autorizacoes",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/usuarios",
+      "destination": "/index.html"
     }
   ],
   "headers": [

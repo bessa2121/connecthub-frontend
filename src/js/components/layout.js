@@ -32,7 +32,7 @@ export function mountLayout(headerEl, footerEl) {
         <div class="actions">
           ${
             u
-              ? html`<a href="/comunidade/${u.slug}" class="row" title="Meu perfil">${avatar(u)}</a><button class="btn ghost sm" data-logout>Sair</button>`
+              ? html`${u.role === 'ADMIN' ? html`<a class="btn ghost sm" href="/admin">Administração</a>` : ''}<a href="/comunidade/${u.slug}" class="row" title="Meu perfil">${avatar(u)}</a><button class="btn ghost sm" data-logout>Sair</button>`
               : html`<a class="btn ghost sm" href="/entrar">Entrar</a>`
           }
           <a class="btn sm" href="/projetos/publicar">Publicar projeto</a>
@@ -65,7 +65,7 @@ export function mountLayout(headerEl, footerEl) {
           <p class="muted" style="margin-top:12px;max-width:340px">Plataforma de divulgação de projetos e conexão entre alunos da ETEC Camargo Aranha. Ideias, pessoas e oportunidades no mesmo lugar.</p>
           <p class="meta"><strong>Contato</strong><br>A definir pela coordenação do projeto.</p></div>
         <div><h4>Navegação</h4><ul><li><a href="/">Início</a></li><li><a href="/projetos">Projetos</a></li><li><a href="/comunidade">Comunidade</a></li></ul></div>
-        <div><h4>Participe</h4><ul><li><a href="/entrar">Entrar</a></li><li><a href="/cadastro">Cadastrar-se</a></li><li><a href="/projetos/publicar">Publicar projeto</a></li><li><a href="/talentos">Talentos</a></li></ul></div>
+        <div><h4>Participe</h4><ul><li><a href="/entrar">Entrar</a></li><li><a href="/solicitar-acesso">Solicitar acesso</a></li><li><a href="/cadastro">Criar conta</a></li><li><a href="/projetos/publicar">Publicar projeto</a></li><li><a href="/talentos">Talentos</a></li></ul></div>
         <div><h4>Institucional</h4><ul><li><a href="/sobre">Sobre o projeto</a></li><li><a href="/privacidade">Política de Privacidade</a></li><li><a href="/termos">Termos de Uso</a></li></ul></div>
       </div>
       <div class="copy">© ${new Date().getFullYear()} ConnectHub · ETEC Camargo Aranha<br>Redes sociais serão adicionadas em breve.<br>

@@ -9,6 +9,8 @@ import { homePage } from './pages/home.js';
 import { projectsPage, projectDetailPage, publishPage, editProjectPage } from './pages/projects.js';
 import { communityPage, memberPage, talentsPage } from './pages/community.js';
 import { loginPage, registerPage } from './pages/auth.js';
+import { accessRequestPage } from './pages/access.js';
+import { adminRequestsPage, adminAuthorizationsPage, adminUsersPage } from './pages/admin.js';
 import { aboutPage, privacyPage, termsPage } from './pages/static.js';
 
 route('/', homePage);
@@ -21,6 +23,10 @@ route('/comunidade/:slug', memberPage);
 route('/talentos', talentsPage);
 route('/entrar', loginPage);
 route('/cadastro', registerPage);
+route('/solicitar-acesso', accessRequestPage);
+route('/admin', adminRequestsPage); // área administrativa: o acesso é validado pelo backend (perfil ADMIN)
+route('/admin/autorizacoes', adminAuthorizationsPage);
+route('/admin/usuarios', adminUsersPage);
 route('/sobre', aboutPage);
 route('/privacidade', privacyPage);
 route('/termos', termsPage);
