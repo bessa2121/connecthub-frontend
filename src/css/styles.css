@@ -1641,12 +1641,39 @@ img.avatar {
   min-width: 240px;
   padding-top: 16px;
 }
-.bio {
+.about {
+  margin-top: 36px;
   max-width: 72ch;
+}
+.about h2 {
+  margin-bottom: 10px;
+}
+.about-text {
+  color: var(--muted);
   font-size: 1.02rem;
-  line-height: 1.65;
+  line-height: 1.7;
   white-space: pre-line;
   overflow-wrap: anywhere;
+}
+.about-text.clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  overflow: hidden;
+}
+.more-btn {
+  margin-top: 8px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.more-btn:hover {
+  text-decoration: underline;
 }
 @media (max-width: 520px) {
   .profile {

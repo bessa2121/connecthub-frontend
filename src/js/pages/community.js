@@ -59,6 +59,25 @@ export async function talentsPage({ query }) {
   };
 }
 
+/** "Sobre" recolhido: o botão "Ver mais" só aparece se o texto realmente passa do limite de linhas. */
+function bindAbout(root) {
+  const text = root.querySelector('[data-about]');
+  const button = root.querySelector('[data-about-toggle]');
+  if (!text || !button) return;
+  const sync = () => {
+    if (text.classList.contains('clamped')) button.hidden = text.scrollHeight <= text.clientHeight + 1;
+  };
+  button.addEventListener('click', () => {
+    const open = text.classList.toggle('clamped') === false;
+    button.setAttribute('aria-expanded', String(open));
+    button.textContent = open ? 'Ver menos' : 'Ver mais';
+    if (!open) text.scrollIntoView({ block: 'nearest' });
+  });
+  sync();
+  document.fonts?.ready.then(sync);
+  window.addEventListener('resize', sync);
+}
+
 export async function memberPage({ params, query }) {
   const [m] = await Promise.all([api.member(params.slug), session.ready]);
   const own = session.user?.id === m.id;
@@ -71,7 +90,8 @@ export async function memberPage({ params, query }) {
       <form class="form wide" data-profile novalidate>
         ${imageField({ name: 'avatar', label: 'Foto de perfil', hint: 'Quadrada, com recorte automático. JPG, PNG ou WebP.', value: m.avatar, round: true })}
         ${imageField({ name: 'banner', label: 'Banner do perfil', hint: 'Imagem larga (proporção 4:1, ex.: 1600×400), com recorte automático. JPG, PNG ou WebP.', value: m.banner, banner: true })}
-        <label>Bio<textarea name="bio" rows="7" maxlength="1000">${m.bio}</textarea><span class="meta">Até 1000 caracteres. Quebras de linha são mantidas.</span></label>
+        <label>Bio (resumo curto)<textarea name="bio" rows="3" maxlength="300">${m.bio}</textarea><span class="meta">Uma ou duas frases, exibidas junto ao seu nome. Até 300 caracteres.</span></label>
+        <label>Sobre<textarea name="about" rows="8" maxlength="3000">${m.about ?? ''}</textarea><span class="meta">Conte sua história, experiências e objetivos. Até 3000 caracteres; parágrafos são mantidos. No perfil, o texto aparece recolhido com “Ver mais”.</span></label>
         <label>Habilidades (separadas por vírgula)<input name="skills" value="${m.skills.join(', ')}"></label>
         <div class="grid g2">
           <label>Curso<select name="course">${options(meta.courses, m.course)}</select></label>
@@ -96,17 +116,29 @@ export async function memberPage({ params, query }) {
         <div class="profile-info">
           <span class="eyebrow">${m.course} · ${m.year}</span>
           <h1 style="font-size:2.2rem;margin-bottom:.2em">${m.name}</h1>
-          <p class="muted bio">${m.bio || 'Este membro ainda não escreveu uma bio.'}</p>
+          <p class="muted">${m.bio || 'Este membro ainda não escreveu uma bio.'}</p>
           <div class="chips">${m.skills.map((s) => html`<a class="chip" href="/talentos?skill=${encodeURIComponent(s)}">${s}</a>`)}</div>
           ${contacts}
           ${own && !contacts ? html`<p class="meta">Adicione Instagram, LinkedIn, portfólio ou e-mail em “Editar perfil” para os colegas entrarem em contato.</p>` : ''}
         </div>
       </div>
       ${own ? editor() : ''}
+      ${
+        m.about
+          ? html`<section class="about" aria-labelledby="about-title">
+              <h2 id="about-title">Sobre</h2>
+              <div class="about-text clamped" id="about-text" data-about>${m.about}</div>
+              <button class="more-btn" type="button" data-about-toggle aria-expanded="false" aria-controls="about-text" hidden>Ver mais</button>
+            </section>`
+          : own
+            ? html`<section class="about"><h2>Sobre</h2><p class="meta">Conte mais sobre você em “Editar perfil” → Sobre.</p></section>`
+            : ''
+      }
       <h2 style="margin-top:40px">Projetos (${m.projects.length})</h2>
       ${m.projects.length ? html`<div class="grid g3">${m.projects.map(projectCard)}</div>` : html`<div class="empty">Nenhum projeto publicado ainda.</div>`}
     </section>`,
     mount(root) {
+      bindAbout(root);
       const form = root.querySelector('[data-profile]');
       if (!form) return;
       bindImageFields(root);
