@@ -1512,6 +1512,106 @@ img.avatar {
     opacity: 0.8;
   }
 }
+/* marcar colegas no projeto */
+.teamfield {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+}
+.teamfield p {
+  margin: 0;
+}
+.avatar.xs {
+  width: 36px;
+  height: 36px;
+  font-size: 0.85rem;
+  box-shadow: none;
+}
+.team-chosen,
+.team-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.team-chip,
+.team-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.team-chip {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.team-who {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-weight: 400;
+}
+.team-who strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92rem;
+}
+.team-x {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.team-x:hover,
+.team-x:focus-visible {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+.team-results {
+  margin-top: 8px;
+  padding: 6px;
+  gap: 2px;
+  max-height: 340px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.team-option {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.team-option:hover,
+.team-option:focus-visible {
+  background: var(--brand-l);
+  outline: 0;
+}
+.team-empty {
+  padding: 10px;
+}
 .form-title {
   margin: 8px 0 0;
   font-size: 1.05rem;

@@ -89,6 +89,7 @@ export const api = {
   updateProject: (slug, body) => send('PUT', `/projects/${slug}`, body),
   uploadImage: (data) => send('POST', '/images', { data }),
   removeProject: (slug) => send('DELETE', `/projects/${slug}`),
+  leaveProject: (slug) => send('DELETE', `/projects/${slug}/authors/me`),
   like: (slug) => send('POST', `/projects/${slug}/like`),
 
   members: (filters = {}) => get(`/members${query(filters)}`),

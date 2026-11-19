@@ -12,6 +12,8 @@ import {
   imageField,
   options,
   projectCard,
+  teamField,
+  bindTeamField,
   toast,
 } from '../components/ui.js';
 
@@ -51,11 +53,14 @@ export async function projectsPage({ query }) {
 
 const safeUrl = (url) => (/^https?:\/\//i.test(url ?? '') ? url : '');
 
-const authorCard = (author) => html`
+const authorCard = (author, publisher = false) => html`
   <div class="author">
     <a class="author-main" href="/comunidade/${author.slug}">
       ${avatar(author)}
-      <span><strong>${author.name}</strong><small class="meta">${author.course} · ${author.year}</small></span>
+      <span>
+        <strong>${author.name}</strong><small class="meta">${author.course} · ${author.year}</small>
+        ${publisher ? html`<small class="meta">Publicou o projeto</small>` : ''}
+      </span>
     </a>
     ${contactLinks(author)}
   </div>`;
@@ -63,7 +68,8 @@ const authorCard = (author) => html`
 export async function projectDetailPage({ params }) {
   const [p] = await Promise.all([api.project(params.slug), session.ready]);
   const me = session.user;
-  const mine = me && p.authors.some((a) => a.id === me.id);
+  const mine = me && p.authors.some((a) => a.id === me.id); // autores (inclusive colegas marcados) editam
+  const isOwner = !!me && p.ownerId === me.id; // quem publicou exclui e gerencia a equipe
   const link = safeUrl(p.link);
 
   return {
@@ -86,12 +92,13 @@ export async function projectDetailPage({ params }) {
             <button class="btn ghost" data-like aria-pressed="${String(p.liked)}">${icon('heart')} <span>${p.likes}</span></button>
             ${link ? html`<a class="btn" href="${link}" target="_blank" rel="noopener noreferrer">${icon('external')} Abrir projeto</a>` : ''}
             ${mine ? html`<a class="btn ghost" href="/projetos/${p.slug}/editar">${icon('pencil')} Editar</a>` : ''}
-            ${mine ? html`<button class="btn danger sm" data-delete>${icon('trash')} Excluir</button>` : ''}
+            ${isOwner ? html`<button class="btn danger sm" data-delete>${icon('trash')} Excluir</button>` : ''}
+            ${mine && !isOwner ? html`<button class="btn ghost sm" data-leave>Sair do projeto</button>` : ''}
           </div>
         </div>
         <aside>
           <h2 class="aside-title">${p.authors.length > 1 ? 'Autores' : 'Autor(a)'}</h2>
-          ${p.authors.map(authorCard)}
+          ${p.authors.map((a) => authorCard(a, p.authors.length > 1 && a.id === p.ownerId))}
         </aside>
       </div>
     </article>`,
@@ -115,12 +122,36 @@ export async function projectDetailPage({ params }) {
         toast('Projeto excluído.');
         navigate('/projetos');
       });
+      root.querySelector('[data-leave]')?.addEventListener('click', async () => {
+        if (
+          !confirm(
+            'Sair deste projeto? Ele deixa de aparecer no seu perfil, e quem publicou pode te marcar de novo.',
+          )
+        )
+          return;
+        try {
+          await api.leaveProject(p.slug);
+          toast('Você saiu do projeto.');
+          navigate(`/projetos/${p.slug}`);
+        } catch (err) {
+          toast(err.message, true);
+        }
+      });
     },
   };
 }
 
-/** Formulário usado para publicar e para editar (mesmos campos; "values" preenche o que já existe). */
-const projectForm = (meta, values, submitLabel) => html`
+const MAX_COAUTHORS = 9; // a API aceita até 10 autores: quem publica + 9 colegas
+
+const teamPicker = () =>
+  teamField({
+    name: 'authors',
+    label: 'Marcar colegas no projeto (opcional)',
+    hint: 'Quem você marcar aparece como autor(a) e ganha o projeto no perfil. Colegas marcados podem editar o projeto; só você exclui e escolhe a equipe. Cada pessoa pode se desmarcar quando quiser.',
+  });
+
+/** Formulário usado para publicar e para editar (mesmos campos; "values" preenche o que já existe; "team" entra antes do botão). */
+const projectForm = (meta, values, submitLabel, team = '') => html`
   <form class="form" data-form novalidate>
     ${imageField({
       name: 'image',
@@ -141,6 +172,7 @@ const projectForm = (meta, values, submitLabel) => html`
       <input name="link" type="url" maxlength="500" value="${values.link}" placeholder="https://">
       <span class="meta">Site, repositório (GitHub), vídeo ou apresentação.</span>
     </label>
+    ${team}
     <button class="btn" type="submit">${submitLabel}</button>
   </form>`;
 
@@ -159,16 +191,18 @@ const emptyValues = (user) => ({
 export async function publishPage() {
   await session.ready;
   if (!session.user) throw redirect('/entrar?next=/projetos/publicar');
-  const meta = await api.meta();
+  // Se a lista de colegas falhar, publicar continua funcionando (só sem o seletor preenchido).
+  const [meta, members] = await Promise.all([api.meta(), api.members().catch(() => [])]);
 
   return {
     title: 'Publicar projeto',
     view: html`<section class="wrap section"><div class="wide">
       <span class="eyebrow">Publicar projeto</span><h1 style="font-size:2.2rem">Mostre o que você criou</h1>
-      ${projectForm(meta, emptyValues(session.user), 'Publicar projeto')}
+      ${projectForm(meta, emptyValues(session.user), 'Publicar projeto', teamPicker())}
     </div></section>`,
     mount(root) {
       bindImageFields(root);
+      bindTeamField(root, { members, excludeId: session.user.id, max: MAX_COAUTHORS });
       bindForm(root.querySelector('[data-form]'), async (data) => {
         const created = await api.publish(data);
         toast('Projeto publicado!');
@@ -184,6 +218,13 @@ export async function editProjectPage({ params }) {
   if (!p.authors.some((a) => a.id === session.user.id)) {
     throw Object.assign(new Error('Apenas os autores podem editar este projeto.'), { status: 403 });
   }
+  // Só quem publicou mexe na equipe; colegas marcados editam o conteúdo e o formulário deles não envia `authors`.
+  const isOwner = p.ownerId === session.user.id;
+  const members = isOwner ? await api.members().catch(() => []) : [];
+  const publisher = p.authors.find((a) => a.id === p.ownerId);
+  const team = isOwner
+    ? teamPicker()
+    : html`<p class="meta">${icon('users', 16)} Só ${publisher?.name ?? 'quem publicou o projeto'} pode mudar quem são os autores. Para sair do projeto, use o botão na página dele.</p>`;
 
   return {
     title: `Editar ${p.title}`,
@@ -191,10 +232,18 @@ export async function editProjectPage({ params }) {
       <a class="back muted" href="/projetos/${p.slug}">${icon('arrow-left')} Voltar ao projeto</a>
       <span class="eyebrow" style="display:block;margin-top:16px">Editar projeto</span>
       <h1 style="font-size:2.2rem">${p.title}</h1>
-      ${projectForm(meta, { ...p, subtitle: p.subtitle ?? '', description: p.description ?? '', tags: p.tags.join(', ') }, 'Salvar alterações')}
+      ${projectForm(meta, { ...p, subtitle: p.subtitle ?? '', description: p.description ?? '', tags: p.tags.join(', ') }, 'Salvar alterações', team)}
     </div></section>`,
     mount(root) {
       bindImageFields(root);
+      if (isOwner) {
+        bindTeamField(root, {
+          members,
+          selected: p.authors.filter((a) => a.id !== p.ownerId),
+          excludeId: session.user.id,
+          max: MAX_COAUTHORS,
+        });
+      }
       bindForm(root.querySelector('[data-form]'), async (data) => {
         await api.updateProject(p.slug, data);
         toast('Projeto atualizado!');

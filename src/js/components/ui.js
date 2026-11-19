@@ -186,6 +186,117 @@ export function bindImageFields(root) {
   }
 }
 
+const fold = (text) => String(text).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
+/**
+ * Campo "marcar colegas": busca membros pelo nome/curso e guarda os escolhidos no campo oculto "name"
+ * (ids separados por vírgula, o formato que a API aceita em `authors`). Só a estrutura vai aqui;
+ * a lista de candidatos entra em bindTeamField.
+ */
+export const teamField = ({ name, label, hint }) => html`
+  <div class="teamfield" data-teamfield>
+    <strong id="team-label">${label}</strong>
+    <p class="meta">${hint}</p>
+    <ul class="team-chosen" data-chosen aria-labelledby="team-label"></ul>
+    <div class="team-search" data-search>
+      <input type="search" data-q placeholder="Buscar colega pelo nome ou curso…" autocomplete="off" aria-label="Buscar colega para marcar">
+      <ul class="team-results" data-results hidden></ul>
+    </div>
+    <p class="meta" data-status role="status"></p>
+    <input type="hidden" name="${name}" value="" data-value>
+  </div>`;
+
+/** `members`: quem pode ser marcado · `selected`: já marcados (na edição) · `excludeId`: o próprio usuário. */
+export function bindTeamField(root, { members, selected = [], excludeId, max = 9 }) {
+  const field = root.querySelector('[data-teamfield]');
+  if (!field) return;
+  const [chosenEl, searchEl, input, results, status, value] = [
+    'chosen',
+    'search',
+    'q',
+    'results',
+    'status',
+    'value',
+  ].map((key) => field.querySelector(`[data-${key}]`));
+  const pool = members.filter((m) => m.id !== excludeId);
+  let chosen = selected.filter((m) => m.id !== excludeId);
+
+  const who = (m) =>
+    html`<span class="team-who"><strong>${m.name}</strong><small class="meta">${m.course} · ${m.year}</small></span>`;
+  const chip = (m) => html`<li class="team-chip">${avatar(m, 'xs')}${who(m)}
+    <button class="team-x" type="button" data-remove="${m.id}" aria-label="Remover ${m.name} do projeto">${icon('x', 16)}</button></li>`;
+  const option = (m) =>
+    html`<li><button class="team-option" type="button" data-add="${m.id}">${avatar(m, 'xs')}${who(m)}</button></li>`;
+
+  const matches = () => {
+    const term = fold(input.value.trim());
+    const taken = new Set(chosen.map((m) => m.id));
+    return pool
+      .filter((m) => !taken.has(m.id) && (!term || fold(`${m.name} ${m.course}`).includes(term)))
+      .slice(0, 6);
+  };
+  const showResults = () => {
+    const list = matches();
+    results.innerHTML = list.length
+      ? list.map(option).join('')
+      : `<li class="team-empty meta">${pool.length ? 'Ninguém encontrado com esse nome.' : 'Nenhum outro colega disponível por enquanto.'}</li>`;
+    results.hidden = false;
+  };
+  const render = (message = '') => {
+    chosenEl.innerHTML = chosen.map(chip).join('');
+    chosenEl.hidden = !chosen.length;
+    value.value = chosen.map((m) => m.id).join(',');
+    const full = chosen.length >= max;
+    searchEl.hidden = full;
+    status.textContent = full ? `${message} Limite de ${max} colegas atingido.`.trim() : message;
+  };
+
+  for (const event of ['focus', 'click', 'input']) input.addEventListener(event, showResults); // click: o campo já pode estar focado
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Enter na busca nunca envia o formulário
+      if (input.value.trim()) results.querySelector('[data-add]')?.click();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (results.hidden) showResults();
+      results.querySelector('[data-add]')?.focus();
+    } else if (e.key === 'Escape') {
+      results.hidden = true;
+    }
+  });
+  results.addEventListener('keydown', (e) => {
+    const items = [...results.querySelectorAll('[data-add]')];
+    const at = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') items[Math.min(at + 1, items.length - 1)]?.focus();
+    else if (e.key === 'ArrowUp') (at > 0 ? items[at - 1] : input).focus();
+    else if (e.key === 'Escape') input.focus();
+    else return;
+    e.preventDefault();
+  });
+  results.addEventListener('mousedown', (e) => e.preventDefault()); // o clique não tira o foco da busca (Safari)
+  results.addEventListener('click', (e) => {
+    const member = pool.find((m) => m.id === e.target.closest('[data-add]')?.dataset.add);
+    if (!member || chosen.length >= max) return;
+    chosen = [...chosen, member];
+    input.value = '';
+    results.hidden = true;
+    render(`${member.name} marcado(a).`);
+    if (!searchEl.hidden) input.focus();
+  });
+  chosenEl.addEventListener('click', (e) => {
+    const id = e.target.closest('[data-remove]')?.dataset.remove;
+    const member = chosen.find((m) => m.id === id);
+    if (!member) return;
+    chosen = chosen.filter((m) => m.id !== id);
+    render(`${member.name} removido(a).`);
+    input.focus();
+  });
+  field.addEventListener('focusout', (e) => {
+    if (!field.contains(e.relatedTarget)) results.hidden = true;
+  });
+  render();
+}
+
 /** Liga um <form> a um handler async, tratando loading e erros de validação do servidor. */
 export function bindForm(form, onSubmit) {
   form.addEventListener('submit', async (event) => {
