@@ -1,7 +1,6 @@
-import { html } from '../lib/html.js';
+import { html, hueOf, raw } from '../lib/html.js';
 import { icon } from '../lib/icons.js';
-import { raw } from '../lib/html.js';
-import { api } from '../services/api.js';
+import { api, assetUrl } from '../services/api.js';
 import { session } from '../services/session.js';
 import { navigate } from '../router.js';
 import {
@@ -71,7 +70,8 @@ export async function memberPage({ params, query }) {
       <summary class="btn ghost sm">${icon('pencil')} Editar perfil</summary>
       <form class="form wide" data-profile novalidate>
         ${imageField({ name: 'avatar', label: 'Foto de perfil', hint: 'Quadrada, com recorte automático. JPG, PNG ou WebP.', value: m.avatar, round: true })}
-        <label>Bio<textarea name="bio" rows="3" maxlength="300">${m.bio}</textarea></label>
+        ${imageField({ name: 'banner', label: 'Banner do perfil', hint: 'Imagem larga (proporção 4:1, ex.: 1600×400), com recorte automático. JPG, PNG ou WebP.', value: m.banner, banner: true })}
+        <label>Bio<textarea name="bio" rows="7" maxlength="1000">${m.bio}</textarea><span class="meta">Até 1000 caracteres. Quebras de linha são mantidas.</span></label>
         <label>Habilidades (separadas por vírgula)<input name="skills" value="${m.skills.join(', ')}"></label>
         <div class="grid g2">
           <label>Curso<select name="course">${options(meta.courses, m.course)}</select></label>
@@ -81,6 +81,7 @@ export async function memberPage({ params, query }) {
         <p class="meta note">Aparecem para qualquer visitante, no seu perfil e nos seus projetos. Preencha só o que quiser divulgar.</p>
         <label>Instagram<input name="instagram" value="${m.instagram ? `@${m.instagram}` : ''}" placeholder="@seuusuario" autocomplete="off"></label>
         <label>LinkedIn<input name="linkedin" value="${m.linkedin ? `https://www.linkedin.com/in/${m.linkedin}` : ''}" placeholder="https://www.linkedin.com/in/seu-perfil" autocomplete="off"></label>
+        <label>Portfólio ou site<input name="portfolio" value="${m.portfolio ?? ''}" placeholder="https://seusite.com" autocomplete="off"></label>
         <label>E-mail de contato<input name="contactEmail" type="email" value="${m.contactEmail}" placeholder="voce@exemplo.com" autocomplete="off"></label>
         <button class="btn" type="submit">Salvar perfil</button>
       </form>
@@ -89,15 +90,16 @@ export async function memberPage({ params, query }) {
   return {
     title: m.name,
     view: html`<section class="wrap section" style="padding-top:40px">
+      <div class="profile-banner" style="--h:${hueOf(m.name)}">${m.banner ? html`<img src="${assetUrl(m.banner)}" alt="" decoding="async" fetchpriority="high">` : ''}</div>
       <div class="profile">
         ${avatar(m, true)}
         <div class="profile-info">
           <span class="eyebrow">${m.course} · ${m.year}</span>
           <h1 style="font-size:2.2rem;margin-bottom:.2em">${m.name}</h1>
-          <p class="muted">${m.bio || 'Este membro ainda não escreveu uma bio.'}</p>
+          <p class="muted bio">${m.bio || 'Este membro ainda não escreveu uma bio.'}</p>
           <div class="chips">${m.skills.map((s) => html`<a class="chip" href="/talentos?skill=${encodeURIComponent(s)}">${s}</a>`)}</div>
           ${contacts}
-          ${own && !contacts ? html`<p class="meta">Adicione Instagram, LinkedIn ou e-mail em “Editar perfil” para os colegas entrarem em contato.</p>` : ''}
+          ${own && !contacts ? html`<p class="meta">Adicione Instagram, LinkedIn, portfólio ou e-mail em “Editar perfil” para os colegas entrarem em contato.</p>` : ''}
         </div>
       </div>
       ${own ? editor() : ''}

@@ -45,18 +45,20 @@ export const cover = (project, big = false) => {
   >${content}${featured}${tag}</div>`;
 };
 
-/** Botões de contato (Instagram, LinkedIn, e-mail). Só aparece o que a pessoa escolheu divulgar. */
+/** Botões de contato (Instagram, LinkedIn, portfólio, e-mail). Só aparece o que a pessoa escolheu divulgar. */
 export const contactLinks = (user, { labels = false } = {}) => {
+  const portfolio = /^https?:\/\//i.test(user.portfolio ?? '') ? user.portfolio : '';
   const links = [
     user.instagram && ['instagram', 'Instagram', `https://instagram.com/${user.instagram}`],
     user.linkedin && ['linkedin', 'LinkedIn', `https://www.linkedin.com/in/${user.linkedin}`],
+    portfolio && ['globe', 'Portfólio', portfolio],
     user.contactEmail && ['mail', 'E-mail', `mailto:${user.contactEmail}`],
   ].filter(Boolean);
   if (!links.length) return '';
 
   return html`<div class="socials">${links.map(
     ([name, label, href]) => html`<a
-      class="soc${labels ? ' wide' : ''}"
+      class="soc${labels ? ' labeled' : ''}"
       href="${href}"
       aria-label="${label} de ${user.name}"
       title="${label}"
@@ -89,7 +91,7 @@ export const projectCard = (p) => html`
 
 export const memberCard = (m) => html`
   <a class="card mcard" href="/comunidade/${m.slug}">
-    <div class="banner" style="--h:${hueOf(m.name)}"></div>
+    <div class="banner" style="--h:${hueOf(m.name)}">${m.banner ? html`<img src="${assetUrl(m.banner)}" alt="" loading="lazy" decoding="async">` : ''}</div>
     ${avatar(m)}
     <div class="body">
       <h3>${m.name}</h3>
@@ -109,10 +111,11 @@ export const options = (list, selected = '', placeholder) => html`
 
 /**
  * Campo de foto: a imagem é reduzida no navegador e enviada assim que escolhida; o formulário só guarda
- * a referência devolvida pela API (campo oculto "name"). `round` = foto de perfil (quadrada, exibida redonda).
+ * a referência devolvida pela API (campo oculto "name"). `round` = foto de perfil (quadrada, exibida redonda);
+ * `banner` = faixa larga (4:1) do topo do perfil.
  */
-export const imageField = ({ name, label, hint, value = '', round = false }) => html`
-  <div class="imgfield${round ? ' round' : ''}" data-imgfield data-round="${round}">
+export const imageField = ({ name, label, hint, value = '', round = false, banner = false }) => html`
+  <div class="imgfield${round ? ' round' : ''}${banner ? ' banner' : ''}" data-imgfield data-round="${round}" data-banner="${banner}">
     <div class="imgfield-preview" data-preview>
       ${value ? html`<img src="${assetUrl(value)}" alt="">` : icon('image', 30)}
     </div>
@@ -133,7 +136,12 @@ export const imageField = ({ name, label, hint, value = '', round = false }) => 
 
 export function bindImageFields(root) {
   for (const field of root.querySelectorAll('[data-imgfield]')) {
-    const size = field.dataset.round === 'true' ? { width: 320, height: 320 } : { width: 1280, height: 720 };
+    const size =
+      field.dataset.round === 'true'
+        ? { width: 320, height: 320 }
+        : field.dataset.banner === 'true'
+          ? { width: 1600, height: 400 }
+          : { width: 1280, height: 720 };
     const [file, value, preview, clear, error, pick] = [
       'file',
       'value',
